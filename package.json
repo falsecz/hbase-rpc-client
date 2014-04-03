@@ -1,0 +1,23 @@
+{
+  "name": "node-hbase",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/falsecz/node-hbase.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/falsecz/node-hbase/issues"
+  },
+  "homepage": "https://github.com/falsecz/node-hbase",
+  "dependencies": {
+    "protobufjs": "~2.0.5",
+    "zookeeper-client": "~0.1.0"
+  }
+}
