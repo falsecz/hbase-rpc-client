@@ -12,7 +12,6 @@ class DataOutputStream
 		length ?= b.length
 		b = b.slice offset, offset + length if offset
 		@out.write b
-		console.log 'write ' + length, b
 		@written += length
 
 

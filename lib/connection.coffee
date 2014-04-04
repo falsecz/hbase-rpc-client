@@ -1,5 +1,6 @@
 Readable = require('readable-stream').Readable
 DataInputStream = require './data-input-stream'
+Call = require './call'
 {DataOutputStream, DataOutputBuffer} = require './output-buffer'
 debug = (require 'debug') 'hbase-connection'
 net = require 'net'
@@ -7,6 +8,7 @@ net = require 'net'
 
 
 HEADER = new Buffer "HBas"
+CALL_TIMEOUT = 5000
 connectionId = 0
 
 ProtoBuf = require("protobufjs")
@@ -25,6 +27,8 @@ rpcProto = rpcBuilder.build()
 module.exports = class Connection extends EventEmitter
 	constructor: (options) ->
 		@id = connectionId++
+		@callId = 1
+		@calls = {}
 		@header = null
 		@socket = null
 		@tcpNoDelay = no
@@ -34,8 +38,6 @@ module.exports = class Connection extends EventEmitter
 			host: options.host
 			port: options.port
 		@name = "connection(#{@address.host}:#{@address.port}) id: #{@id}"
-		#@rpcTimeout = 0
-		#@pingTimeout = 0
 		@_connected = no
 		@_socketError = null
 		@_callNums = 0
@@ -48,8 +50,7 @@ module.exports = class Connection extends EventEmitter
 		@in = new DataInputStream @socketReadable
 		@out = new DataOutputStream @socket
 
-		@socket.on 'data', (data) ->
-			console.log 'onData', data
+		@in.on 'messages', @processMessages
 
 		@socket.on 'connect', () =>
 			debug "connected to #{@name}"
@@ -64,16 +65,28 @@ module.exports = class Connection extends EventEmitter
 			impl = (method, req, done) =>
 				reflect = builder.lookup method
 				reqHeader = new RequestHeader
-					callId: 1
+					callId: @callId++
 					requestParam: yes
 					methodName: reflect.name
 				reqHeaderBuffer = reqHeader.toBuffer()
 
 				@out.writeDelimitedBuffers reqHeaderBuffer, req.toBuffer()
+				@calls[reqHeader.callId] = new Call reflect.resolvedResponseType.clazz, reqHeader, CALL_TIMEOUT, done
 
 			@rpc = new ClientService impl
 
 			@emit 'connect'
+
+
+	processMessages: (messages) =>
+		header = ResponseHeader.decode messages[0]
+		unless call = @calls[header.callId]
+			debug "Invalid callId #{header.callId}"
+			return
+
+		return call.complete header.exception if header.exception
+
+		call.complete null, call.responseClass.decode messages[1]
 
 
 	writeHead: () =>

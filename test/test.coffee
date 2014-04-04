@@ -4,6 +4,9 @@ client = hbase
 	zookeeperHosts: ['localhost']
 	zookeeperRoot: '/hbase'
 
-put = new hbase.Put '12345'
-client._action()
+
+del = new hbase.Delete 'aaa'
+del.deleteColumns 'cf1', 'col'
+client.delete 'mrdka', del, () ->
+	console.log 'test out', arguments
 

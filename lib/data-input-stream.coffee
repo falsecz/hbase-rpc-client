@@ -1,27 +1,61 @@
 debug = require('debug')('hbase:data_input_stream')
 Readable = require('readable-stream').Readable
-#Bytes = require './util/bytes'
-#WritableUtils = require './writable_utils'
+ByteBuffer = require 'protobufjs/node_modules/bytebuffer'
+{EventEmitter} = require 'events'
 
 
-module.exports = class DataInputStream
+module.exports = class DataInputStream extends EventEmitter
 	constructor: (io) ->
 		@in = io
 		if typeof io.read isnt 'function'
 			@in = new Readable()
 			@in.wrap(io)
 
-		@bytearr = new Buffer(80)
+		@bytearr = new Buffer 80
+		@buffer = new Buffer 0
+
+		@awaitBytes = 0
+		@in.on 'data', @processData
+
+	processData: (data) =>
+		data = new Buffer(0) unless data
+
+		@buffer = Buffer.concat [@buffer, data]
+		# expecting Int
+		return if @awaitBytes is 0 and @buffer.length < 4
+
+		unless @awaitBytes
+			@awaitBytes = @buffer.readUInt32BE 0
+			@buffer = @buffer.slice 4
+
+		return if @awaitBytes and @awaitBytes > @buffer.length
+
+		@processMessage @buffer.slice 0, @awaitBytes
+		@buffer = @buffer.slice @awaitBytes + 1
+		@awaitBytes = 0
+
+		@processData() if @buffer.length > 0
 
 
-	read: (b, cb) =>
-		@in.read b, 0, b.length
+	processMessage: (message) =>
+		payload = ByteBuffer.wrap message
+
+		readDelimited = () ->
+			headerLen = payload.readVarint32()
+			header = payload.slice payload.offset , payload.offset + headerLen
+			payload.offset += headerLen
+			header.toBuffer()
+
+		messages = []
+		messages.push readDelimited() while payload.remaining()
+		@.emit 'messages', messages
 
 
-	readBytes: (size, cb) =>
-		buf = @in.read size
-		debug 'readBytes: %d size, Got %s, socket total read bytes: %d', size, buf ? 'Buffer' : null, this.in.bytesRead
-		if buf is null
-			return @in.once 'readable', @readBytes.bind @, size, cb
 
-		cb null, buf
+
+
+
+
+
+
+

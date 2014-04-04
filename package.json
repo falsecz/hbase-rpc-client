@@ -18,6 +18,9 @@
   "homepage": "https://github.com/falsecz/node-hbase",
   "dependencies": {
     "protobufjs": "~2.0.5",
-    "zookeeper-client": "~0.1.0"
+    "zookeeper-client": "~0.1.0",
+    "zookeeper-watcher": "^0.2.0",
+    "debug": "^0.8.0",
+    "readable-stream": "^1.0.26-4"
   }
 }
