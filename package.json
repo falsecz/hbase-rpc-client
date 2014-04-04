@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "DEBUG=-mocha*,* ./node_modules/.bin/mocha  --compilers coffee:coffee-script --require coffee-script  test --reporter spec"
   },
   "repository": {
     "type": "git",
@@ -22,5 +22,9 @@
     "zookeeper-watcher": "^0.2.0",
     "debug": "^0.8.0",
     "readable-stream": "^1.0.26-4"
+  },
+  "devDependencies": {
+    "chai": "~1.9.1",
+    "mocha": "~1.18.2"
   }
 }
