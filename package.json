@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "DEBUG=-mocha*,* ./node_modules/.bin/mocha  --compilers coffee:coffee-script --require coffee-script  test --reporter spec"
+    "test": "DEBUG=-mocha*,* ./node_modules/.bin/mocha  --compilers coffee:coffee-script/register --require coffee-script  test --reporter spec"
   },
   "repository": {
     "type": "git",
@@ -21,7 +21,8 @@
     "zookeeper-client": "~0.1.0",
     "zookeeper-watcher": "^0.2.0",
     "debug": "^0.8.0",
-    "readable-stream": "^1.0.26-4"
+    "readable-stream": "^1.0.26-4",
+    "async": "^0.6.2"
   },
   "devDependencies": {
     "chai": "~1.9.1",
