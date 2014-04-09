@@ -300,7 +300,7 @@ message Action {
   // result with what was originally submitted.
   optional uint32 index = 1;
   optional MutationProto mutation = 2;
-  optional Get get = 3;
+  optional Get gxt = 3;
 }
 
 /**

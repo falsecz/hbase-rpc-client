@@ -3,11 +3,16 @@ ZooKeeperWatcher = require 'zookeeper-watcher'
 zkProto = require './zk-protobuf'
 Connection = require './connection'
 Get = require './get'
+Put = require './put'
+Delete = require './delete'
+Scan = require './scan'
 debugzk = (require 'debug') 'zk'
 debug = (require 'debug') 'hbase-client'
 crypto = require 'crypto'
+async = require 'async'
 
 ProtoBuf = require("protobufjs")
+ProtoBuf.convertFieldsToCamelCase = true
 builder = ProtoBuf.loadProtoFile("#{__dirname}/../proto/Client.proto")
 proto = builder.build()
 
@@ -19,7 +24,6 @@ META_TABLE_NAME = new Buffer 'hbase:meta'
 META_REGION_NAME = new Buffer 'hbase:meta,,1'
 MAGIC = 255
 MD5_HEX_LENGTH = 32
-net = require 'net'
 
 module.exports = class Client extends EventEmitter
 	constructor: (options) ->
@@ -71,7 +75,7 @@ module.exports = class Client extends EventEmitter
 				@rootServer = rootServer.server
 
 				serverName = @getServerName @rootServer
-				@getRegionConnection @rootServer.hostName, @rootServer.port, (err, server) =>
+				@getRegionConnection serverName, (err, server) =>
 					return cb err if err
 					debugzk "zookeeper start done, got new root #{serverName}, old #{oldServer?.server?.hostName}:#{oldServer?.server?.port}"
 
@@ -81,40 +85,30 @@ module.exports = class Client extends EventEmitter
 				#@locateRegion META_TABLE_NAME
 
 
-	bufferCompare: (a, b) ->
-		if a.length > b.length
-			return -1
-		else if a .length < b.length
-			return 1
-
-		for i, v of a
-			if a[i] isnt b[i]
-				return a[i] - b[i]
-
-		0
-
-
 	getServerName: (hostname, port) ->
 		if typeof hostname is 'object'
 			port = hostname.port
-			hostname = hostname.hostname
+			hostname = hostname.hostName
 
 		"#{hostname}:#{port}"
 
 
+	locateNextRegion: (region, cb) =>
+
+
 	locateRegion: (table, row, useCache, cb) =>
+		if typeof useCache is 'function'
+			cb = useCache
+			useCache = yes
+
 		debug "locateRegion table: #{table} row: #{row}"
 		table = new Buffer table unless Buffer.isBuffer table
-		row = new Buffer(row or 0)
+		row = new Buffer(row or [0])
 
 		@ensureZookeeperTrackers (err) =>
 			return cb err if err
 
-			if @bufferCompare table, META_TABLE_NAME is 0
-				console.log 'rootServer', @rootServer
-				@locateRegionInMeta table, row, useCache, cb
-			else
-				@locateRegionInMeta table, row, useCache, cb
+			@locateRegionInMeta table, row, useCache, cb
 
 
 	locateRegionInMeta: (table, row, useCache, cb) =>
@@ -146,7 +140,7 @@ module.exports = class Client extends EventEmitter
 						qualifier = res.qualifier.toBuffer().toString()
 
 						if qualifier is 'server'
-							region.region = res.value.toBuffer()
+							region.server = res.value.toBuffer()
 
 						if qualifier is 'regioninfo'
 							b = res.value.toBuffer()
@@ -157,7 +151,7 @@ module.exports = class Client extends EventEmitter
 							region.name = res.row.toBuffer()
 							region.ts = res.timestamp
 
-				unless region.region
+				unless region.server
 					err = "region for table #{table} not found"
 					cb err
 					return debug err
@@ -171,6 +165,19 @@ module.exports = class Client extends EventEmitter
 		@cachedRegionLocations[table][region.name] = region
 
 
+	bufferCompare: (a, b) ->
+		len1 = a.length
+		len2 = b.length
+
+		return 0 if a is b and len1 is len2
+
+		for i, v of a
+			if a[i] isnt b[i]
+				return a[i] - b[i]
+
+		len1 - len2
+
+
 	getCachedLocation: (table, row) =>
 		return null unless @cachedRegionLocations[table] and Object.keys(@cachedRegionLocations[table]).length > 0
 		cachedRegions = Object.keys(@cachedRegionLocations[table])
@@ -179,24 +186,36 @@ module.exports = class Client extends EventEmitter
 			startKey = @cachedRegionLocations[table][cachedRegion].startKey
 			endKey = @cachedRegionLocations[table][cachedRegion].endKey
 
-			if @bufferCompare(row, endKey) <= 0 and @bufferCompare(row, startKey) is 1
+			if @bufferCompare(row, endKey) <= 0 and @bufferCompare(row, startKey) > 0
 				debug "Found cached regionLocation #{cachedRegion}"
-				return @cachedRegionLocations[table][cachedRegion].region
+				return @cachedRegionLocations[table][cachedRegion]
 
 		null
 
 
-	parseResponse: (res) =>
+	printRegion: (region) ->
 		o =
+			startKey: region.startKey.toString()
+			endKey: region.endKey.toString()
+			name: region.name.toString()
+			ts: region.ts.toString()
+			server: region.server.toString()
+
+
+	parseResponse: (res) =>
+		# TODO: upravit strukturu
+		o =
+			row: res.row.toBuffer().toString()
 			family: res.family.toBuffer().toString()
 			qualifier: res.qualifier.toBuffer().toString()
 			value: res.value.toBuffer().toString()
+			timestamp: res.timestamp.toString()
 
 
 	createRegionName: (table, startKey, id, newFormat) =>
 		table = new Buffer table unless Buffer.isBuffer table
-		startKey = new Buffer(startKey or 0)
-		id = new Buffer(id?.toString() or 0)
+		startKey = new Buffer(startKey or [0])
+		id = new Buffer(id?.toString() or [0])
 		delim = new Buffer ','
 		b = Buffer.concat [table, delim, startKey, delim, id]
 		md5 = new Buffer(md5sum b)
@@ -219,8 +238,7 @@ module.exports = class Client extends EventEmitter
 		@locateRegion table, obj.row, useCache, (err, location) =>
 			return cb err if err
 
-			[hostname, port] = location.region.toString().split ':'
-			@getRegionConnection hostname, port, (err, server) =>
+			@getRegionConnection location.server.toString(), (err, server) =>
 				return cb err if err
 
 				if method is 'get'
@@ -235,7 +253,7 @@ module.exports = class Client extends EventEmitter
 						return cb err if err
 
 						for res in response.result.cell
-							result.push = @parseResponse res
+							result.push @parseResponse res
 
 						cb null, result
 				else if method in ['put', 'delete']
@@ -249,31 +267,207 @@ module.exports = class Client extends EventEmitter
 					server.rpc.Mutate req, cb
 
 
+	_multiAction: (table, multiActions, useCache, retry, cb) =>
+		if typeof useCache is 'function'
+			cb = useCache
+			useCache = yes
+			retry = 0
+		else if typeof retry is 'function'
+			cb = retry
+			retry = 0
+
+		req =
+			regionAction: []
+
+		result = []
+		async.each Object.keys(multiActions), (serverName, done) =>
+			for region, actions of multiActions[serverName]
+				operations = []
+
+				for action in actions
+					if action.method is 'get'
+						operations.push gxt: action.getFields()
+					else if action.method in ['put', 'delete']
+						operations.push mutation: action.getFields()
+
+				req.regionAction.push
+					region:
+						type: "REGION_NAME"
+						value: region
+					action: operations
+
+			@getRegionConnection serverName, (err, server) =>
+				return done err if err
+
+				server.rpc.Multi req, (err, res) =>
+					return done err if err
+
+					for serverResult in res.regionActionResult
+						for response in serverResult.resultOrException
+							for cell in response.result.cell
+								result.push @parseResponse cell
+
+					done()
+		, (err) =>
+			cb err, result
+
+
+	getScanner: (table, startRow, stopRow, filter) =>
+		new Scan table, startRow, stopRow, filter, @
+
+
 	get: (table, get, cb) =>
+		debug "get on table: #{table} get: #{get}"
 		@_action 'get', table, get, cb
 
 
 	put: (table, put, cb) =>
+		debug "put on table: #{table} put: #{put}"
 		@_action 'put', table, put, cb
 
 
 	delete: (table, del, cb) =>
+		debug "delete on table: #{table} delete: #{del}"
 		@_action 'delete', table, del, cb
 
 
+	mget: (table, rows, columns, opts, cb) =>
+		return cb "Input is expected to be an array" unless Array.isArray(rows) and rows.length > 0
+		debug "mget on table: #{table} #{rows.length} rows"
+
+		if typeof columns is 'function'
+			cb = columns
+			opts = {}
+			columns = []
+		else if typeof opts is 'function'
+			cb = opts
+			opts = {}
+
+		workingList = []
+		for row in rows
+			if row instanceof Get
+				get = row
+			else
+				get = new Get row
+
+				if columns
+					for column in columns
+						column = column.split ':'
+						get.addColumn column[0], column[1]
+
+			get.method = 'get'
+			workingList.push get
+
+		@processBatch table, workingList, true, 0, (err, results) =>
+			cb err, results
+
+
+	mput: (table, rows, opts, cb) =>
+		return cb "Input is expected to be an array" unless Array.isArray(rows) and rows.length > 0
+		debug "mput on table: #{table} #{rows.length} rows"
+
+		if typeof columns is 'function'
+			cb = columns
+			opts = {}
+			columns = []
+		else if typeof opts is 'function'
+			cb = opts
+			opts = {}
+
+		workingList = []
+		for row in rows
+			if row instanceof Put
+				put = row
+			else
+				put = new Put row.row
+
+				for column, value of row
+					continue if column is 'row'
+
+					column = column.split ':'
+					put.add column[0], column[1], value
+
+			put.method = 'put'
+			workingList.push put
+
+		@processBatch table, workingList, true, 0, (err, results) =>
+			cb err, results
+
+
+	mdelete: (table, rows, opts, cb) =>
+		return cb "Input is expected to be an array" unless Array.isArray(rows) and rows.length > 0
+		debug "mdelete on table: #{table} #{rows.length} rows"
+
+		if typeof columns is 'function'
+			cb = columns
+			opts = {}
+			columns = []
+		else if typeof opts is 'function'
+			cb = opts
+			opts = {}
+
+		workingList = []
+		for row in rows
+			if row instanceof Delete
+				del = row
+			else
+				del = new Delete row
+
+			del.method = 'delete'
+			workingList.push del
+
+		@processBatch table, workingList, true, 0, (err, results) =>
+			cb err, results
+
+
+	processBatch: (table, workingList, useCache, retry, cb) =>
+		if typeof useCache is 'function'
+			cb = useCache
+			useCache = yes
+
+		actionsByServer = {}
+
+		workingList.filter (item) ->
+			item?
+
+		return cb null, [] if workingList.length is 0
+
+		async.each workingList, (row, done) =>
+			@locateRegion table, row.getRow(), useCache, (err, location) =>
+				return done err if err
+
+				actionsByServer[location.server] ?= {}
+				actionsByServer[location.server][location.name] ?= []
+				actionsByServer[location.server][location.name].push row
+				done()
+		, (err) =>
+			return cb err if err
+			@_multiAction table, actionsByServer, useCache, retry, cb
+
+
+	# TODO
 	prefetchRegionCache: (table, row, cb) =>
 		startRow = ''
 
 
-	getRegionConnection: (hostname, port, cb) =>
-		serverName = @getServerName hostname, port
+	getRegionConnection: (serverName, port, cb) =>
+		if typeof port is 'function'
+			cb = port
+			[hostname, port] = serverName.split ':'
+		else
+			serverName = @getServerName serverName, port
+
 		server = @servers[serverName]
-		if server and server.state is "ready"
-			debug "getRegionConnection from cache (servers: #{@serversLength}), #{serverName}"
-			return cb null, server
+		if server
+			if server.state is "ready"
+				debug "getRegionConnection from cache (servers: #{@serversLength}), #{serverName}"
+				cb null, server
+			else
+				server.on 'ready', () ->
+					cb null, server
+			return
 
-		return cb null, server if server
-
+		debug "getRegionConnection connecting to #{serverName}"
 		server = new Connection(
 			host: hostname
 			port: port
@@ -306,9 +500,11 @@ module.exports = class Client extends EventEmitter
 			handleConnectionError err
 			return
 		, @rpcTimeout
+
 		server.once "connect", =>
 			debug "%s connected, total %d connections", serverName, @serversLength
 			server.state = "ready"
+			server.emit 'ready'
 			clearTimeout timer
 			timer = null
 			cb null, server

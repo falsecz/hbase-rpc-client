@@ -33,6 +33,10 @@ module.exports = class Put
 		o
 
 
+	getRow: () =>
+		@row
+
+
 
 
 

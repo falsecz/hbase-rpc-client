@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "DEBUG=-mocha*,* ./node_modules/.bin/mocha  --compilers coffee:coffee-script/register --require coffee-script  test --reporter spec"
+    "test": "DEBUG=-mocha*, ./node_modules/.bin/mocha  --compilers coffee:coffee-script/register --require coffee-script  test --reporter spec"
   },
   "repository": {
     "type": "git",

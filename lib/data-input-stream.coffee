@@ -17,6 +17,7 @@ module.exports = class DataInputStream extends EventEmitter
 		@awaitBytes = 0
 		@in.on 'data', @processData
 
+
 	processData: (data) =>
 		data = new Buffer(0) unless data
 
@@ -31,7 +32,7 @@ module.exports = class DataInputStream extends EventEmitter
 		return if @awaitBytes and @awaitBytes > @buffer.length
 
 		@processMessage @buffer.slice 0, @awaitBytes
-		@buffer = @buffer.slice @awaitBytes + 1
+		@buffer = @buffer.slice @awaitBytes
 		@awaitBytes = 0
 
 		@processData() if @buffer.length > 0

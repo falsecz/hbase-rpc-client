@@ -8,7 +8,7 @@ module.exports = class Call
 		@startTime = new Date
 
 		@timer = setTimeout () =>
-			debug "operation #{@header.callId} timedout after #{@timeout}ms"
+			debug "operation #{@header.callId} (#{@header.methodName}) timedout after #{@timeout}ms"
 			@called = yes
 			@cb 'timedout'
 		, @timeout
@@ -16,7 +16,7 @@ module.exports = class Call
 
 	complete: (err, data) =>
 		return if @called
-		debug "operation #{@header.callId} completed. Took: #{new Date - @startTime}ms"
+		debug "operation #{@header.callId} (#{@header.methodName}) completed. Took: #{new Date - @startTime}ms"
 		clearTimeout @timer
 		@cb err, data
 

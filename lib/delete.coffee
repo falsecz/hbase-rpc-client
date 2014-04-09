@@ -49,4 +49,8 @@ module.exports = class Delete
 		o
 
 
+	getRow: () =>
+		@row
+
+
 
