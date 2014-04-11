@@ -32,6 +32,7 @@ describe 'hbase', () ->
 
 	client = hbase
 		#zookeeperHosts: ['10.11.0.192']
+		#zookeeperHosts: ['192.168.57.1']
 		zookeeperHosts: ['localhost']
 		zookeeperRoot: '/hbase'
 
@@ -47,10 +48,10 @@ describe 'hbase', () ->
 		get = new hbase.Get testRows[0].row
 		client.get testTable, get, (err, res) ->
 			assert.equal err, null
-			assert.equal res[0].row, testRows[0].row
-			assert.equal res[0].family, testRows[0].cf
-			assert.equal res[0].qualifier, testRows[0].col
-			assert.equal res[0].value, testRows[0].val
+			assert.equal res.row, testRows[0].row
+			assert.equal res.columns[0].family, testRows[0].cf
+			assert.equal res.columns[0].qualifier, testRows[0].col
+			assert.equal res.columns[0].value, testRows[0].val
 			done()
 
 	it 'should delete row', (done) ->
@@ -62,7 +63,7 @@ describe 'hbase', () ->
 			get = new hbase.Get testRows[0].row
 			client.get testTable, get, (err, res) ->
 				assert.equal err, null
-				assert.equal res.length, 0
+				assert.equal res, null
 				done()
 
 	it 'should put multiple rows via array of Put objects', (done) ->

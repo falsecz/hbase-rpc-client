@@ -1,0 +1,11 @@
+
+
+module.exports =
+	MAGIC: 255
+	MD5_HEX_LENGTH: 32
+	SERVERNAME_SEPARATOR: ","
+	META_TABLE_NAME: new Buffer 'hbase:meta'
+	META_REGION_NAME: new Buffer 'hbase:meta,,1'
+	NINES: "99999999999999"
+	ZEROS: "00000000000000"
+

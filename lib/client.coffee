@@ -6,8 +6,11 @@ Get = require './get'
 Put = require './put'
 Delete = require './delete'
 Scan = require './scan'
+utils = require './utils'
+hconstants = require './hconstants'
 debugzk = (require 'debug') 'zk'
 debug = (require 'debug') 'hbase-client'
+rDebug = (require 'debug') 'hbase-region'
 crypto = require 'crypto'
 async = require 'async'
 
@@ -19,11 +22,6 @@ proto = builder.build()
 md5sum = (data) ->
 	crypto.createHash('md5').update(data).digest('hex')
 
-SERVERNAME_SEPARATOR = ","
-META_TABLE_NAME = new Buffer 'hbase:meta'
-META_REGION_NAME = new Buffer 'hbase:meta,,1'
-MAGIC = 255
-MD5_HEX_LENGTH = 32
 
 module.exports = class Client extends EventEmitter
 	constructor: (options) ->
@@ -37,12 +35,12 @@ module.exports = class Client extends EventEmitter
 			root: options.zookeeperRoot
 
 		@servers = {}
-		@serversLength = 0
 		@cachedRegionLocations = {}
 		@rpcTimeout = 30000
 		@pingTimeout = 30000
 		@zkStart = "init"
 		@rootRegionZKPath = options.rootRegionZKPath or '/meta-region-server'
+		@prefetchRegionCacheList = {}
 		@ensureZookeeperTrackers (err) =>
 			@emit 'error', err if err
 
@@ -82,7 +80,7 @@ module.exports = class Client extends EventEmitter
 					# only first start success will emit ready event
 					@emit "ready" if firstStart
 
-				#@locateRegion META_TABLE_NAME
+				#@locateRegion hconstants.META_TABLE_NAME
 
 
 	getServerName: (hostname, port) ->
@@ -101,7 +99,7 @@ module.exports = class Client extends EventEmitter
 			cb = useCache
 			useCache = yes
 
-		debug "locateRegion table: #{table} row: #{row}"
+		rDebug "locateRegion table: #{table} row: #{row}"
 		table = new Buffer table unless Buffer.isBuffer table
 		row = new Buffer(row or [0])
 
@@ -112,70 +110,71 @@ module.exports = class Client extends EventEmitter
 
 
 	locateRegionInMeta: (table, row, useCache, cb) =>
-		debug "locateRegionInMeta table: #{table} row: #{row}"
+		rDebug "locateRegionInMeta table: #{table} row: #{row}"
 		region = @createRegionName(table, row, '', yes)
+
+		if utils.bufferCompare(table, hconstants.META_TABLE_NAME) is 0
+			o =
+				startKey: new Buffer 0
+				endKey: new Buffer 0
+				name: hconstants.META_REGION_NAME
+				server: @getServerName @rootServer.hostName, @rootServer.port
+
+			return cb null, o
+
 		req =
 			region:
 				type: "REGION_NAME"
-				value: META_REGION_NAME
+				value: hconstants.META_REGION_NAME
 			gxt:
 				row: region
 				column:
 					family: "info"
 				closestRowBefore: yes
 
-		if useCache
-			cachedRegion = @getCachedLocation table, row
-			return cb null, cachedRegion if cachedRegion
+		@prefetchRegionCache table, () =>
+			if useCache
+				cachedRegion = @getCachedLocation table, row
+				return cb null, cachedRegion if cachedRegion
 
-		@getRegionConnection @rootServer.hostName, @rootServer.port, (err, server) =>
-			server.rpc.Get req, (err, response) =>
-				if err
-					debug "locateRegionInMeta error: #{err}"
-					return cb err
+			@getRegionConnection @rootServer.hostName, @rootServer.port, (err, server) =>
+				server.rpc.Get req, (err, response) =>
+					if err
+						rDebug "locateRegionInMeta error: #{err}"
+						return cb err
 
-				region = {}
-				if response?.result
-					for res in response.result.cell
-						qualifier = res.qualifier.toBuffer().toString()
+					if response?.result
+						region = @_parseRegionInfo @_parseResponse response.result
 
-						if qualifier is 'server'
-							region.server = res.value.toBuffer()
+					unless region.server
+						err = "region for table #{table} not found"
+						cb err
+						return rDebug err
 
-						if qualifier is 'regioninfo'
-							b = res.value.toBuffer()
-							regionInfo = b.slice b.toString().indexOf('PBUF') + 4
-							regionInfo = proto.RegionInfo.decode regionInfo
-							region.startKey = regionInfo.startKey.toBuffer()
-							region.endKey = regionInfo.endKey.toBuffer()
-							region.name = res.row.toBuffer()
-							region.ts = res.timestamp
+					@cacheLocation table, region
+					cb null, region
 
-				unless region.server
-					err = "region for table #{table} not found"
-					cb err
-					return debug err
 
-				@cacheLocation table, region
-				cb null, region
+	_parseRegionInfo: (res) =>
+		return null unless Object.keys(res).length
+
+		regionInfo = res.cols['info:regioninfo'].value
+		regionInfo = regionInfo.slice regionInfo.toString().indexOf('PBUF') + 4
+		regionInfo = proto.RegionInfo.decode regionInfo
+
+		region =
+			server: res.cols['info:server'].value
+			startKey: regionInfo.startKey.toBuffer()
+			endKey: regionInfo.endKey.toBuffer()
+			name: res.row
+			ts: res.cols['info:server'].timestamp.toString()
+
+		region
 
 
 	cacheLocation: (table, region) =>
 		@cachedRegionLocations[table] ?= {}
 		@cachedRegionLocations[table][region.name] = region
-
-
-	bufferCompare: (a, b) ->
-		len1 = a.length
-		len2 = b.length
-
-		return 0 if a is b and len1 is len2
-
-		for i, v of a
-			if a[i] isnt b[i]
-				return a[i] - b[i]
-
-		len1 - len2
 
 
 	getCachedLocation: (table, row) =>
@@ -186,8 +185,8 @@ module.exports = class Client extends EventEmitter
 			startKey = @cachedRegionLocations[table][cachedRegion].startKey
 			endKey = @cachedRegionLocations[table][cachedRegion].endKey
 
-			if @bufferCompare(row, endKey) <= 0 and @bufferCompare(row, startKey) > 0
-				debug "Found cached regionLocation #{cachedRegion}"
+			if utils.bufferCompare(row, endKey) <= 0 and utils.bufferCompare(row, startKey) > 0
+				rDebug "Found cached regionLocation #{cachedRegion}"
 				return @cachedRegionLocations[table][cachedRegion]
 
 		null
@@ -202,20 +201,43 @@ module.exports = class Client extends EventEmitter
 			server: region.server.toString()
 
 
-	parseResponse: (res) =>
+	_parseResponse: (res) =>
+		return null unless res?.cell?.length
+
 		# TODO: upravit strukturu
+		row = null
+		cols = {}
+		columns = []
+
+		for cell in res.cell
+			row = cell.row.toBuffer()
+			f = cell.family.toBuffer()
+			q = cell.qualifier.toBuffer()
+			v = cell.value.toBuffer()
+			t = cell.timestamp
+
+			cols["#{f}:#{q}"] =
+				value: v
+				timestamp: t
+
+			columns.push
+				family: f
+				qualifier: q
+				value: v
+				timestamp: t
+
 		o =
-			row: res.row.toBuffer().toString()
-			family: res.family.toBuffer().toString()
-			qualifier: res.qualifier.toBuffer().toString()
-			value: res.value.toBuffer().toString()
-			timestamp: res.timestamp.toString()
+			row: row
+			cols: cols
+			columns: columns
+
+		o
 
 
 	createRegionName: (table, startKey, id, newFormat) =>
 		table = new Buffer table unless Buffer.isBuffer table
-		startKey = new Buffer(startKey or [0])
-		id = new Buffer(id?.toString() or [0])
+		startKey = new Buffer(startKey or 0)
+		id = new Buffer(id?.toString() or 0)
 		delim = new Buffer ','
 		b = Buffer.concat [table, delim, startKey, delim, id]
 		md5 = new Buffer(md5sum b)
@@ -252,10 +274,7 @@ module.exports = class Client extends EventEmitter
 					server.rpc.Get req, (err, response) =>
 						return cb err if err
 
-						for res in response.result.cell
-							result.push @parseResponse res
-
-						cb null, result
+						cb null, @_parseResponse response.result
 				else if method in ['put', 'delete']
 					req =
 						region:
@@ -304,8 +323,8 @@ module.exports = class Client extends EventEmitter
 
 					for serverResult in res.regionActionResult
 						for response in serverResult.resultOrException
-							for cell in response.result.cell
-								result.push @parseResponse cell
+							o = @_parseResponse response.result
+							result.push o if o
 
 					done()
 		, (err) =>
@@ -445,9 +464,32 @@ module.exports = class Client extends EventEmitter
 			@_multiAction table, actionsByServer, useCache, retry, cb
 
 
-	# TODO
-	prefetchRegionCache: (table, row, cb) =>
-		startRow = ''
+	prefetchRegionCache: (table, cb) =>
+		return cb() if @prefetchRegionCacheList[table] or utils.bufferCompare(table, hconstants.META_TABLE_NAME) is 0
+
+		startRow = @createRegionName table, null, hconstants.ZEROS, no
+		stopRow = @createRegionName utils.bufferIncrement(table), null, hconstants.ZEROS, no
+
+		scan = @getScanner hconstants.META_TABLE_NAME, startRow, stopRow
+
+		work = yes
+		async.whilst () ->
+			work
+		, (done) =>
+			scan.next (err, regionRow) =>
+				return done err if err
+
+				unless regionRow.row
+					@prefetchRegionCacheList[table] = yes
+					work = no
+					return done()
+
+				region = @_parseRegionInfo regionRow
+				@cacheLocation table, region if region
+				done()
+		, (err) ->
+			console.log err if err
+			cb()
 
 
 	getRegionConnection: (serverName, port, cb) =>
@@ -460,14 +502,14 @@ module.exports = class Client extends EventEmitter
 		server = @servers[serverName]
 		if server
 			if server.state is "ready"
-				debug "getRegionConnection from cache (servers: #{@serversLength}), #{serverName}"
+				rDebug "getRegionConnection from cache (servers: #{Object.keys(@servers).length}), #{serverName}"
 				cb null, server
 			else
 				server.on 'ready', () ->
 					cb null, server
 			return
 
-		debug "getRegionConnection connecting to #{serverName}"
+		rDebug "getRegionConnection connecting to #{serverName}"
 		server = new Connection(
 			host: hostname
 			port: port
@@ -478,7 +520,6 @@ module.exports = class Client extends EventEmitter
 
 		# cache server
 		@servers[serverName] = server
-		@serversLength++
 		timer = null
 		handleConnectionError = handleConnectionError = (err) =>
 			if timer
@@ -486,12 +527,10 @@ module.exports = class Client extends EventEmitter
 				timer = null
 			delete @servers[serverName]
 
-			@serversLength--
-
 			# avoid 'close' and 'connect' event emit.
 			server.removeAllListeners()
 			server.close()
-			debug err.message
+			rDebug err.message
 
 
 		# handle connect timeout
@@ -502,13 +541,12 @@ module.exports = class Client extends EventEmitter
 		, @rpcTimeout
 
 		server.once "connect", =>
-			debug "%s connected, total %d connections", serverName, @serversLength
+			rDebug "%s connected, total %d connections", serverName, Object.keys(@servers).length
 			server.state = "ready"
 			server.emit 'ready'
 			clearTimeout timer
 			timer = null
 			cb null, server
-
 
 		server.once "connectError", handleConnectionError
 
