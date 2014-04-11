@@ -2,12 +2,6 @@ debug = (require 'debug') 'hbase-client'
 utils = require './utils'
 
 
-ProtoBuf = require("protobufjs")
-ProtoBuf.convertFieldsToCamelCase = true
-builder = ProtoBuf.loadProtoFile("#{__dirname}/../proto/Client.proto")
-proto = builder.build()
-
-
 
 
 # TODO: timer kterej kdyz ten scanner nezavres, tak ho closnes manualne (60s tusim)

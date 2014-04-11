@@ -8,4 +8,6 @@ module.exports =
 	META_REGION_NAME: new Buffer 'hbase:meta,,1'
 	NINES: "99999999999999"
 	ZEROS: "00000000000000"
+	HEADER: new Buffer "HBas"
+	CALL_TIMEOUT: 5000
 

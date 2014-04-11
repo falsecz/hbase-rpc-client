@@ -4,11 +4,10 @@ Call = require './call'
 {DataOutputStream, DataOutputBuffer} = require './output-buffer'
 debug = (require 'debug') 'hbase-connection'
 net = require 'net'
+hconstants = require './hconstants'
 {EventEmitter} = require 'events'
 
 
-HEADER = new Buffer "HBas"
-CALL_TIMEOUT = 5000
 connectionId = 0
 
 ProtoBuf = require("protobufjs")
@@ -71,7 +70,7 @@ module.exports = class Connection extends EventEmitter
 				reqHeaderBuffer = reqHeader.toBuffer()
 
 				@out.writeDelimitedBuffers reqHeaderBuffer, req.toBuffer()
-				@calls[reqHeader.callId] = new Call reflect.resolvedResponseType.clazz, reqHeader, CALL_TIMEOUT, done
+				@calls[reqHeader.callId] = new Call reflect.resolvedResponseType.clazz, reqHeader, hconstants.CALL_TIMEOUT, done
 
 			@rpc = new ClientService impl
 
@@ -94,7 +93,7 @@ module.exports = class Connection extends EventEmitter
 		b1.writeUInt8 0, 0
 		b2 = new Buffer [1]
 		b2.writeUInt8 80, 0
-		@out.write Buffer.concat [HEADER, b1, b2]
+		@out.write Buffer.concat [hconstants.HEADER, b1, b2]
 
 
 	setupConnection: () =>

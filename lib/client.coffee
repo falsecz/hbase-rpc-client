@@ -91,9 +91,6 @@ module.exports = class Client extends EventEmitter
 		"#{hostname}:#{port}"
 
 
-	locateNextRegion: (region, cb) =>
-
-
 	locateRegion: (table, row, useCache, cb) =>
 		if typeof useCache is 'function'
 			cb = useCache
