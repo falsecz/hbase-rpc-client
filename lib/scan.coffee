@@ -18,6 +18,7 @@ module.exports = class Scan
 		@cached = []
 		@server = null
 		@location = null
+		@timeout = null
 
 
 	# fetch data and return closest row
@@ -41,12 +42,15 @@ module.exports = class Scan
 					startRow: @startRow
 					stopRow: @stopRow
 
+			debug "scan on table: #{@table} region: #{@location.name.toString()} startRow: #{@startRow} stopRow: #{@stopRow}"
 			@server.rpc.Scan req, (err, response) =>
 				return cb err if err
 
 				nextRegion = yes
 				@nextStartRow = null
 				@scannerId = response.scannerId
+				clearTimeout @timeout if @timeout
+				@timeout = setTimeout @close, response.ttl
 
 				# we didn't finish scanning of the current region
 				if response.results.length is @numCached \
@@ -90,8 +94,6 @@ module.exports = class Scan
 
 
 	next: (cb) =>
-		debug "scan on table: #{@table} startRow: #{@startRow} stopRow: #{@stopRow}"
-
 		# still have some results in cache
 		return cb null, (@cached.splice 0, 1)[0] if @cached.length
 
