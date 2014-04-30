@@ -2,6 +2,8 @@
 
 module.exports =
 	MAGIC: 255
+	MAGIC_SIZE: 1
+	ID_LENGTH_SIZE: 4
 	MD5_HEX_LENGTH: 32
 	SERVERNAME_SEPARATOR: ","
 	META_TABLE_NAME: new Buffer 'hbase:meta'
