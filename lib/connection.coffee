@@ -32,7 +32,6 @@ module.exports = class Connection extends EventEmitter
 		@socket = null
 		@tcpNoDelay = no
 		@tcpKeepAlive= yes
-		@calls = {}
 		@address =
 			host: options.host
 			port: options.port
@@ -122,15 +121,18 @@ module.exports = class Connection extends EventEmitter
 
 
 	_handleClose: () =>
-		console.log "_handleClose", arguments
+		@closed = yes
+		@emit 'close'
+		debug "_handleClose #{JSON.stringify arguments}"
 
 
-	_handleError: () =>
-		console.log "_handleError", arguments
+	_handleError: (err) =>
+		@_handleClose()
+		debug "_handleError #{JSON.stringify arguments}"
 
 
 	_handleTimeout: () =>
-		console.log "_handleTimeout", arguments
+		debug "_handleTimeout #{JSON.stringify arguments}"
 
 
 class Service

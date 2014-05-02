@@ -56,6 +56,7 @@ module.exports = class Client extends EventEmitter
 				@zkStart = "error"
 				debugzk "[%s] [worker:%s] [hbase-client] zookeeper connect error: %s", new Date(), process.pid, err.stack
 				return @emit "ready", err
+
 			@zk.unWatch @rootRegionZKPath
 			@zk.watch @rootRegionZKPath, (err, value, zstat) =>
 				firstStart = @zkStart isnt "done"
@@ -68,6 +69,10 @@ module.exports = class Client extends EventEmitter
 					return
 
 				rootServer = zkProto.decodeMeta value
+				unless rootServer
+					console.log "Failed to parse rootServer"
+					return
+
 				@zkStart = "done"
 				oldServer = @rootServer or server: hostName: 'none', port: 'none'
 				@rootServer = rootServer.server
@@ -281,6 +286,27 @@ module.exports = class Client extends EventEmitter
 
 					result = []
 					server.rpc.Mutate req, cb
+				else if method is 'checkAndPut'
+					comparator =  new proto.BinaryComparator
+						comparable:
+							value: obj.value
+
+					req =
+						region:
+							type: "REGION_NAME"
+							value: location.name
+						mutation: obj.put.getFields()
+						condition:
+							row: obj.row
+							family: obj.family
+							qualifier: obj.qualifier
+							compareType: 'EQUAL'
+							comparator:
+								name: 'org.apache.hadoop.hbase.filter.BinaryComparator'
+								serializedComparator: comparator.encode()
+
+					result = []
+					server.rpc.Mutate req, cb
 
 
 	_multiAction: (table, multiActions, useCache, retry, cb) =>
@@ -333,17 +359,30 @@ module.exports = class Client extends EventEmitter
 
 
 	get: (table, get, cb) =>
-		debug "get on table: #{table} get: #{get}"
+		debug "get on table: #{table} get: #{JSON.stringify get}"
 		@_action 'get', table, get, cb
 
 
+	checkAndPut: (table, row, family, qualifier, value, put, cb) =>
+		o =
+			row: row
+			family: family
+			qualifier: qualifier
+			value: value
+			put: put
+
+		debug "checkAndPut on table: #{table} object: #{JSON.stringify o}"
+
+		@_action 'checkAndPut', table, o, cb
+
+
 	put: (table, put, cb) =>
-		debug "put on table: #{table} put: #{put}"
+		debug "put on table: #{table} put: #{JSON.stringify put}"
 		@_action 'put', table, put, cb
 
 
 	delete: (table, del, cb) =>
-		debug "delete on table: #{table} delete: #{del}"
+		debug "delete on table: #{table} delete: #{JSON.stringify del}"
 		@_action 'delete', table, del, cb
 
 
@@ -489,12 +528,13 @@ module.exports = class Client extends EventEmitter
 			cb()
 
 
-	getRegionConnection: (serverName, port, cb) =>
+	getRegionConnection: (hostname, port, cb) =>
 		if typeof port is 'function'
 			cb = port
-			[hostname, port] = serverName.split ':'
+			serverName = hostname
+			[hostname, port] = hostname.split ':'
 		else
-			serverName = @getServerName serverName, port
+			serverName = @getServerName hostname, port
 
 		server = @servers[serverName]
 		if server
@@ -518,22 +558,12 @@ module.exports = class Client extends EventEmitter
 		# cache server
 		@servers[serverName] = server
 		timer = null
-		handleConnectionError = handleConnectionError = (err) =>
-			if timer
-				clearTimeout timer
-				timer = null
-			delete @servers[serverName]
-
-			# avoid 'close' and 'connect' event emit.
-			server.removeAllListeners()
-			server.close()
-			rDebug err.message
 
 
 		# handle connect timeout
 		timer = setTimeout () =>
 			err = "#{serverName} connect timeout, " + @rpcTimeout + " ms"
-			handleConnectionError err
+			@_handleConnectionError err, serverName, timer
 			return
 		, @rpcTimeout
 
@@ -545,17 +575,39 @@ module.exports = class Client extends EventEmitter
 			timer = null
 			cb null, server
 
-		server.once "connectError", handleConnectionError
+		server.once "connectError", @_handleConnectionError.bind @, null, serverName, timer
 
 		# TODO: connection always emit close event?
-		#server.once "close", @_handleConnectionClose.bind(@, serverName)
+		server.once "close", @_handleConnectionClose.bind @, serverName
 
 
+	_handleConnectionError: (err, serverName, timer) =>
+		if timer
+			clearTimeout timer
+			timer = null
+
+		debug err if err
+
+		server = @servers[serverName]
+		delete @servers[serverName]
+
+		# avoid 'close' and 'connect' event emit
+		server.removeAllListeners()
+		server.close()
+		rDebug err.message
 
 
+	_handleConnectionClose: (serverName) =>
+		delete @servers[serverName]
+		@_clearCachedLocationForServer serverName
+		rDebug "_handleConnectionClose server: #{serverName}"
 
 
-
-
+	_clearCachedLocationForServer: (serverName) =>
+		for table, regions of @cachedRegionLocations
+			for regionName, region of regions
+				if region.server.toString() is serverName
+					delete @cachedRegionLocations[table]
+					@prefetchRegionCacheList[table] = no
 
 
