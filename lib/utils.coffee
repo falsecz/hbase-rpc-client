@@ -27,7 +27,9 @@ module.exports =
 
 		for i in [0..len1-1]
 			if a[i] isnt b[i]
-				return a[i] - b[i]
+				_a = if a[i] then a[i] else 0
+				_b = if b[i] then b[i] else 0
+				return _a - _b
 
 		len1 - len2
 
