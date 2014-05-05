@@ -12,4 +12,5 @@ module.exports =
 	ZEROS: "00000000000000"
 	HEADER: new Buffer "HBas"
 	CALL_TIMEOUT: 5000
+	SOCKET_RETRY_WAIT_MS: 200
 

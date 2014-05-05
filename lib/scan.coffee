@@ -13,6 +13,7 @@ module.exports = class Scan
 		@server = null
 		@location = null
 		@timeout = null
+		@row = 0
 
 
 	# fetch data and return closest row
@@ -36,7 +37,8 @@ module.exports = class Scan
 					startRow: @startRow
 					stopRow: @stopRow
 
-			debug "scan on table: #{@table} region: #{@location.name.toString()} startRow: #{@startRow} stopRow: #{@stopRow}"
+			@row++
+			debug "scan on table: #{@table} row: #{@row} region: #{@location.name.toString()} startRow: #{@startRow} stopRow: #{@stopRow}"
 			@server.rpc.Scan req, (err, response) =>
 				return cb err if err
 

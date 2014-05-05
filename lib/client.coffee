@@ -45,6 +45,44 @@ module.exports = class Client extends EventEmitter
 			@emit 'error', err if err
 
 
+	_zkWatch: () =>
+		@zk.unWatch @rootRegionZKPath
+		@zk.watch @rootRegionZKPath, (err, value, zstat) =>
+			firstStart = @zkStart isnt "done"
+			if err
+				setTimeout () =>
+					@_zkWatch()
+				, hconstants.SOCKET_RETRY_WAIT_MS
+
+				debugzk "[%s] [worker:%s] [hbase-client] zookeeper watch error: %s", new Date(), process.pid, err.stack
+				if firstStart
+					# only first start fail will emit ready event
+					@zkStart = "error"
+					@emit "ready", err
+				return
+
+			@zkWatchTimeoutCount = 1
+			rootServer = zkProto.decodeMeta value
+			unless rootServer
+				console.log "Failed to parse rootServer"
+				return
+
+			@zkStart = "done"
+			oldServer = @rootServer or server: hostName: 'none', port: 'none'
+			@rootServer = rootServer.server
+
+			serverName = @getServerName @rootServer
+			# TODO: not needed
+			@getRegionConnection serverName, (err, server) =>
+				return cb err if err
+				debugzk "zookeeper start done, got new root #{serverName}, old #{oldServer?.hostName}:#{oldServer?.port}"
+
+				# only first start success will emit ready event
+				@emit "ready" if firstStart
+
+			#@locateRegion hconstants.META_TABLE_NAME
+
+
 	ensureZookeeperTrackers: (cb) =>
 		return cb() if @zkStart is "done"
 		@once "ready", cb
@@ -57,35 +95,7 @@ module.exports = class Client extends EventEmitter
 				debugzk "[%s] [worker:%s] [hbase-client] zookeeper connect error: %s", new Date(), process.pid, err.stack
 				return @emit "ready", err
 
-			@zk.unWatch @rootRegionZKPath
-			@zk.watch @rootRegionZKPath, (err, value, zstat) =>
-				firstStart = @zkStart isnt "done"
-				if err
-					debugzk "[%s] [worker:%s] [hbase-client] zookeeper watch error: %s", new Date(), process.pid, err.stack
-					if firstStart
-						# only first start fail will emit ready event
-						@zkStart = "error"
-						@emit "ready", err
-					return
-
-				rootServer = zkProto.decodeMeta value
-				unless rootServer
-					console.log "Failed to parse rootServer"
-					return
-
-				@zkStart = "done"
-				oldServer = @rootServer or server: hostName: 'none', port: 'none'
-				@rootServer = rootServer.server
-
-				serverName = @getServerName @rootServer
-				@getRegionConnection serverName, (err, server) =>
-					return cb err if err
-					debugzk "zookeeper start done, got new root #{serverName}, old #{oldServer?.server?.hostName}:#{oldServer?.server?.port}"
-
-					# only first start success will emit ready event
-					@emit "ready" if firstStart
-
-				#@locateRegion hconstants.META_TABLE_NAME
+			@_zkWatch()
 
 
 	getServerName: (hostname, port) ->
@@ -175,6 +185,7 @@ module.exports = class Client extends EventEmitter
 
 
 	cacheLocation: (table, region) =>
+		#debug "cacheLocation #{region.name} server: #{region.server}"
 		@cachedRegionLocations[table] ?= {}
 		@cachedRegionLocations[table][region.name] = region
 
@@ -502,6 +513,7 @@ module.exports = class Client extends EventEmitter
 
 	prefetchRegionCache: (table, cb) =>
 		return cb() if @prefetchRegionCacheList[table] or utils.bufferCompare(table, hconstants.META_TABLE_NAME) is 0
+		debug "prefetchRegionCache for table: #{table}"
 
 		startRow = @createRegionName table, null, hconstants.ZEROS, no
 		stopRow = @createRegionName utils.bufferIncrement(table), null, hconstants.ZEROS, no
@@ -582,6 +594,8 @@ module.exports = class Client extends EventEmitter
 
 
 	_handleConnectionError: (err, serverName, timer) =>
+		rDebug "_handleConnectionError server: #{serverName} msg: #{err.message}"
+
 		if timer
 			clearTimeout timer
 			timer = null
@@ -594,13 +608,12 @@ module.exports = class Client extends EventEmitter
 		# avoid 'close' and 'connect' event emit
 		server.removeAllListeners()
 		server.close()
-		rDebug err.message
 
 
 	_handleConnectionClose: (serverName) =>
+		rDebug "_handleConnectionClose server: #{serverName}"
 		delete @servers[serverName]
 		@_clearCachedLocationForServer serverName
-		rDebug "_handleConnectionClose server: #{serverName}"
 
 
 	_clearCachedLocationForServer: (serverName) =>
