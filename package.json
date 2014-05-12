@@ -11,7 +11,7 @@
     "url": "git://github.com/falsecz/node-hbase.git"
   },
   "author": "",
-  "license": "MIT",
+  "license": "Apache",
   "bugs": {
     "url": "https://github.com/falsecz/node-hbase/issues"
   },

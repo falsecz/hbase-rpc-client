@@ -1,19 +1,70 @@
 debug = (require 'debug') 'hbase-client'
 utils = require './utils'
+async = require 'async'
+
+ProtoBuf = require("protobufjs")
+ProtoBuf.convertFieldsToCamelCase = true
+builder = ProtoBuf.loadProtoFile("#{__dirname}/../proto/Filter.proto")
+proto = builder.build()
 
 
+module.exports.getFilter = getFilter = (filter) ->
+	FilterList = require './filter-list'
+
+	if filter instanceof FilterList
+		filterList =  new proto.FilterList filter.get()
+
+		name: 'org.apache.hadoop.hbase.filter.FilterList'
+		serializedFilter: filterList.encode()
+	else
+		#exception kdyz jich bude vic
+		filterName = Object.keys(filter)[0]
+		filterNameUpper = "#{filterName[0].toUpperCase()}#{filterName[1..]}"
+
+		unless proto[filterNameUpper]
+			console.log "Invalid filter #{filterNameUpper}"
+			return false
+
+		if filterNameUpper in ['SingleColumnValueFilter']
+			filter[filterName].comparator = getFilter filter[filterName].comparator
+
+		o =
+			name: "org.apache.hadoop.hbase.filter.#{filterNameUpper}"
+		serialized = 'serializedFilter'
+		serialized = 'serializedComparator' if filterNameUpper.indexOf('Comparator') >= 0
+		o[serialized] = new proto[filterNameUpper](filter[filterName]).encode()
+		o
+###
+	singleColumnValueFilter:
+		columnFamily: 'cf'
+		columnQualifier: 'col'
+		compareOp: 'EQUAL'
+		comparator:
+			name: 'org.apache.hadoop.hbase.filter.SubstringComparator'
+			serializedComparator:
+				substringComparator:
+					substr: 'val'
+		filterIfMissing: no
+		latestVersionOnly: yes
+###
 
 
-# TODO: timer kterej kdyz ten scanner nezavres, tak ho closnes manualne (60s tusim)
-module.exports = class Scan
-	constructor: (@table, @startRow, @stopRow, @filter, @client) ->
+module.exports.Scan = class Scan
+	constructor: (@table, @startRow, @stopRow, @client) ->
 		@closed = no
-		@numCached = 50
+		@numCached = 100
 		@cached = []
 		@server = null
 		@location = null
 		@timeout = null
 		@row = 0
+
+
+	setFilter: (filter) =>
+		@filter = getFilter filter
+
+		return false unless @filter
+		yes
 
 
 	# fetch data and return closest row
@@ -36,6 +87,8 @@ module.exports = class Scan
 				req.scan =
 					startRow: @startRow
 					stopRow: @stopRow
+
+			req.scan.filter = @filter if @filter
 
 			@row++
 			debug "scan on table: #{@table} row: #{@row} region: #{@location.name.toString()} startRow: #{@startRow} stopRow: #{@stopRow}"
@@ -117,6 +170,32 @@ module.exports = class Scan
 		return if @closed
 		@closeScan @server, @location, @scannerId
 		@closed = yes
+
+
+	each: (f, cb) =>
+		work = yes
+		async.whilst () ->
+			work
+		, (done) =>
+			@next (err, row) =>
+				return done err if err
+
+				unless row.row
+					work = no
+					return done()
+
+				f row
+				done()
+		, (err) ->
+			cb err
+
+
+	toArray: (cb) =>
+		out = []
+		@each (row) ->
+			out.push row
+		, (err) ->
+			cb err, out
 
 
 

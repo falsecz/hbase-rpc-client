@@ -5,7 +5,7 @@ Connection = require './connection'
 Get = require './get'
 Put = require './put'
 Delete = require './delete'
-Scan = require './scan'
+Scan = require('./scan').Scan
 utils = require './utils'
 hconstants = require './hconstants'
 debugzk = (require 'debug') 'zk'
@@ -365,8 +365,8 @@ module.exports = class Client extends EventEmitter
 			cb err, result
 
 
-	getScanner: (table, startRow, stopRow, filter) =>
-		new Scan table, startRow, stopRow, filter, @
+	getScanner: (table, startRow, stopRow) =>
+		new Scan table, startRow, stopRow, @
 
 
 	get: (table, get, cb) =>

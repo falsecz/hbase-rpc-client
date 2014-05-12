@@ -1,7 +1,9 @@
 assert = require 'assert'
+async = require 'async'
 
 # create pre-splitted table
 # hbase org.apache.hadoop.hbase.util.RegionSplitter mrdka HexStringSplit -c 10 -f cf1
+
 
 describe 'hbase', () ->
 	@_timeout = 2000
@@ -10,22 +12,22 @@ describe 'hbase', () ->
 	testRows = [
 			row: '111111'
 			cf: 'cf1'
-			col: 'col'
+			col: 'col1'
 			val: 'val1'
 		,
 			row: '555555'
 			cf: 'cf1'
-			col: 'col'
+			col: 'col2'
 			val: 'val2'
 		,
 			row: '999999'
 			cf: 'cf1'
-			col: 'col'
+			col: 'col3'
 			val: 'val3'
 		,
 			row: 'aaaaaa'
 			cf: 'cf1'
-			col: 'col'
+			col: 'col4'
 			val: 'val4'
 	]
 	hbase = require '../index.coffee'
@@ -129,26 +131,118 @@ describe 'hbase', () ->
 
 	it 'should scan the table', (done) ->
 		scan = client.getScanner testTable
-		scan.next (err, res) ->
-			assert.equal err, null
-			assert.equal res.row, testRows[0].row
 
-			scan.next (err, res) ->
-				assert.equal err, null
-				assert.equal res.row, testRows[1].row
-
-				scan.next (err, res) ->
+		async.eachSeries [0..testRows.length], (i, cb) ->
+			if i is testRows.length
+				scan.next (err, row) ->
 					assert.equal err, null
-					assert.equal res.row, testRows[2].row
+					assert.equal Object.keys(row), 0
+					cb()
+			else
+				scan.next (err, row) ->
+					assert.equal err, null
+					assert.equal row.row, testRows[i].row
+					cb()
+		, () ->
+			done()
 
-					scan.next (err, res) ->
-						assert.equal err, null
-						assert.equal res.row, testRows[3].row
 
-						scan.next (err, res) ->
-							assert.equal err, null
-							assert.equal Object.keys(res), 0
-							done()
+
+	it 'should scan the table with startRow and stopRow', (done) ->
+		scan = client.getScanner testTable, '5', '6'
+		scan.next (err, row) ->
+			assert.equal err, null
+			assert.equal row.row, testRows[1].row
+
+			scan.next (err, row) ->
+				assert.equal err, null
+				assert.equal Object.keys(row), 0
+				done()
+
+	it 'should scan the table with filter', (done) ->
+		scan = client.getScanner testTable
+		scan.setFilter columnPrefixFilter: prefix: testRows[2].col
+		scan.next (err, row) ->
+			assert.equal err, null
+			assert.equal row.row, testRows[2].row
+			assert.equal row.cols["#{testRows[2].cf}:#{testRows[2].col}"].value, testRows[2].val
+
+			scan.next (err, row) ->
+				assert.equal err, null
+				assert.equal Object.keys(row), 0
+				done()
+
+	it 'should scan the table with filterList', (done) ->
+		scan = client.getScanner testTable
+		fl = new hbase.FilterList
+		fl.addFilter columnPrefixFilter: prefix: testRows[2].col
+		scan.setFilter fl
+		scan.next (err, row) ->
+			assert.equal err, null
+			assert.equal row.row, testRows[2].row
+			assert.equal row.cols["#{testRows[2].cf}:#{testRows[2].col}"].value, testRows[2].val
+
+			scan.next (err, row) ->
+				assert.equal err, null
+				assert.equal Object.keys(row), 0
+				done()
+
+	it 'should scan the table with filterList consisting of multiple filterLists', (done) ->
+		scan = client.getScanner testTable
+
+		f1 =
+			singleColumnValueFilter:
+				columnFamily: 'cf1'
+				columnQualifier: 'col2'
+				compareOp: 'EQUAL'
+				comparator:
+					substringComparator:
+						substr: '2'
+				filterIfMissing: yes
+				latestVersionOnly: yes
+
+		f2 =
+			singleColumnValueFilter:
+				columnFamily: 'cf1'
+				columnQualifier: 'col3'
+				compareOp: 'EQUAL'
+				comparator:
+					substringComparator:
+						substr: '3'
+				filterIfMissing: yes
+				latestVersionOnly: yes
+
+		fl1 = new hbase.FilterList
+		fl2 = new hbase.FilterList
+		fl3 = new hbase.FilterList 'MUST_PASS_ONE'
+
+		fl1.addFilter f1
+		fl2.addFilter f2
+
+		fl3.addFilter fl1
+		fl3.addFilter fl2
+
+		scan.setFilter fl3
+		scan.toArray (err, res) ->
+			assert.equal err, null
+
+			assert.equal res[0].row, testRows[1].row
+			assert.equal res[0].cols["#{testRows[1].cf}:#{testRows[1].col}"].value, testRows[1].val
+
+			assert.equal res[1].row, testRows[2].row
+			assert.equal res[1].cols["#{testRows[2].cf}:#{testRows[2].col}"].value, testRows[2].val
+			done()
+
+	it 'should scan the table and convert result to array', (done) ->
+		scan = client.getScanner testTable
+		scan.toArray (err, res) ->
+			assert.equal err, null
+
+			for i, row of testRows
+				assert.equal res[i].row, testRows[i].row
+				assert.equal res[i].cols["#{testRows[i].cf}:#{testRows[i].col}"].value, testRows[i].val
+
+			done()
 
 	it 'should delete multiple rows via simple array', (done) ->
 		rows = []
