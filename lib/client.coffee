@@ -297,7 +297,7 @@ module.exports = class Client extends EventEmitter
 
 					result = []
 					server.rpc.Mutate req, cb
-				else if method is 'checkAndPut'
+				else if method in ['checkAndPut', 'checkAndDelete']
 					comparator =  new proto.BinaryComparator
 						comparable:
 							value: obj.value
@@ -306,7 +306,7 @@ module.exports = class Client extends EventEmitter
 						region:
 							type: "REGION_NAME"
 							value: location.name
-						mutation: obj.put.getFields()
+						mutation: obj.op.getFields()
 						condition:
 							row: obj.row
 							family: obj.family
@@ -380,11 +380,24 @@ module.exports = class Client extends EventEmitter
 			family: family
 			qualifier: qualifier
 			value: value
-			put: put
+			op: put
 
 		debug "checkAndPut on table: #{table} object: #{JSON.stringify o}"
 
 		@_action 'checkAndPut', table, o, cb
+
+
+	checkAndDelete: (table, row, family, qualifier, value, del, cb) =>
+		o =
+			row: row
+			family: family
+			qualifier: qualifier
+			value: value
+			op: del
+
+		debug "checkAndDelete on table: #{table} object: #{JSON.stringify o}"
+
+		@_action 'checkAndDelete', table, o, cb
 
 
 	put: (table, put, cb) =>

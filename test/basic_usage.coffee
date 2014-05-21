@@ -30,6 +30,7 @@ describe 'hbase', () ->
 			col: 'col4'
 			val: 'val4'
 	]
+	randomValue = 'lkjhgfdsa'
 	hbase = require '../index.coffee'
 
 	client = hbase
@@ -257,6 +258,36 @@ describe 'hbase', () ->
 				assert.equal err, null
 				assert.equal res.length, 0
 				done()
+
+	it 'should checkAndPut', (done) ->
+		put = new hbase.Put testRows[0].row
+		put.add testRows[0].cf, testRows[0].col, testRows[0].val
+
+		client.put testTable, put, (err, res) ->
+			assert.equal err, null
+			assert.equal res.processed, yes
+
+			put = new hbase.Put testRows[0].row
+			put.add testRows[0].cf, testRows[0].col, randomValue
+
+			client.checkAndPut testTable, testRows[0].row, testRows[0].cf, testRows[0].col, testRows[0].val, put, (err, res) ->
+				assert.equal err, null
+				assert.equal res.processed, yes
+				done()
+
+	it 'should checkAndDelete', (done) ->
+		del = new hbase.Delete testRows[0].row
+		client.checkAndDelete testTable, testRows[0].row, testRows[0].cf, testRows[0].col, randomValue, del, (err, res) ->
+			assert.equal err, null
+			assert.equal res.processed, yes
+
+			get = new hbase.Get testRows[0].row
+
+			client.get testTable, get, (err, res) ->
+				assert.equal err, null
+				assert.equal res, null
+				done()
+
 
 
 

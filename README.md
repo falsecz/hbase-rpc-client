@@ -5,23 +5,21 @@ WIP! CoffeeScript HBase Implementation with protobuf support based on https://gi
 
 For examples, please check test/basic_usage.coffee
 
-DONE:
-	- get
-	- put
-	- delete
-	- mget
-	- mput
-	- mdelete
-	- checkAndPut
-	- scan:
-		- filter
-		- filterList
-
-TODO:
-	- getRowOrBefore
-	- checkAndDelete
-	- mutateRow
-	- append
-	- increment
-	- incrementColumnValue
+Features:
+* [√] get
+* [√] put
+* [√] delete
+* [√] mget
+* [√] mput
+* [√] mdelete
+* [√] checkAndPut
+* [√] checkAndDelete
+* [√] scan:
+	 * [√]filter
+	 * [√]filterList
+* [ ] getRowOrBefore
+* [ ] mutateRow
+* [ ] append
+* [ ] increment
+* [ ] incrementColumnValue
 

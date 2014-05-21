@@ -34,19 +34,6 @@ module.exports.getFilter = getFilter = (filter) ->
 		serialized = 'serializedComparator' if filterNameUpper.indexOf('Comparator') >= 0
 		o[serialized] = new proto[filterNameUpper](filter[filterName]).encode()
 		o
-###
-	singleColumnValueFilter:
-		columnFamily: 'cf'
-		columnQualifier: 'col'
-		compareOp: 'EQUAL'
-		comparator:
-			name: 'org.apache.hadoop.hbase.filter.SubstringComparator'
-			serializedComparator:
-				substringComparator:
-					substr: 'val'
-		filterIfMissing: no
-		latestVersionOnly: yes
-###
 
 
 module.exports.Scan = class Scan
@@ -182,10 +169,10 @@ module.exports.Scan = class Scan
 
 				unless row.row
 					work = no
-					return done()
+					return process.nextTick done
 
 				f row
-				done()
+				return process.nextTick done
 		, (err) ->
 			cb err
 
