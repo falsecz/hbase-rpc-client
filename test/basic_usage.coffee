@@ -1,32 +1,38 @@
 assert = require 'assert'
 async = require 'async'
+ByteBuffer = require '../node_modules/protobufjs/node_modules/bytebuffer'
+
 
 # create pre-splitted table
 # hbase org.apache.hadoop.hbase.util.RegionSplitter mrdka HexStringSplit -c 10 -f cf1
 
 
 describe 'hbase', () ->
-	@_timeout = 2000
+	@_timeout = 10000
+
+	tCf = 'cf1'
+	tRow = '1'
+	tCol = 'col'
 
 	testTable = 'mrdka'
 	testRows = [
 			row: '111111'
-			cf: 'cf1'
+			cf: tCf
 			col: 'col1'
 			val: 'val1'
 		,
 			row: '555555'
-			cf: 'cf1'
+			cf: tCf
 			col: 'col2'
 			val: 'val2'
 		,
 			row: '999999'
-			cf: 'cf1'
+			cf: tCf
 			col: 'col3'
 			val: 'val3'
 		,
 			row: 'aaaaaa'
-			cf: 'cf1'
+			cf: tCf
 			col: 'col4'
 			val: 'val4'
 	]
@@ -288,9 +294,36 @@ describe 'hbase', () ->
 				assert.equal res, null
 				done()
 
+	it 'should increment & incrementColumnValue', (done) ->
+		inc = 4
+		b = new ByteBuffer 8
+		b.writeLong 65
+		b = b.toBuffer()
 
+		put = new hbase.Put tRow
+		put.add tCf, tCol, b
+		client.put testTable, put, (err, res) ->
+			assert.equal err, null
+			assert.equal res.processed, yes
 
+			increment = new hbase.Increment '1'
+			increment.add tCf, tCol, inc
 
+			client.increment testTable, increment, (err, res) ->
+				assert.equal err, null
+				val = res.result.cell[0].value.toBuffer()
+				assert.equal hbase.utils.bufferCompare(val, b), inc
+
+				client.incrementColumnValue testTable, tRow, tCf, tCol, inc, (err, res) ->
+					assert.equal err, null
+					val = res.result.cell[0].value.toBuffer()
+					assert.equal hbase.utils.bufferCompare(val, b), inc * 2
+
+					del = new hbase.Delete '1'
+					client.delete testTable, del, (err, res) ->
+						assert.equal err, null
+						assert.equal res.processed, yes
+						done()
 
 
 

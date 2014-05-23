@@ -5,6 +5,7 @@ Connection = require './connection'
 Get = require './get'
 Put = require './put'
 Delete = require './delete'
+Increment = require './increment'
 Scan = require('./scan').Scan
 utils = require './utils'
 hconstants = require './hconstants'
@@ -283,19 +284,17 @@ module.exports = class Client extends EventEmitter
 							value: location.name
 						gxt: obj.getFields()
 
-					result = []
 					server.rpc.Get req, (err, response) =>
 						return cb err if err
 
 						cb null, @_parseResponse response.result
-				else if method in ['put', 'delete']
+				else if method in ['put', 'delete', 'increment']
 					req =
 						region:
 							type: "REGION_NAME"
 							value: location.name
 						mutation: obj.getFields()
 
-					result = []
 					server.rpc.Mutate req, cb
 				else if method in ['checkAndPut', 'checkAndDelete']
 					comparator =  new proto.BinaryComparator
@@ -316,7 +315,6 @@ module.exports = class Client extends EventEmitter
 								name: 'org.apache.hadoop.hbase.filter.BinaryComparator'
 								serializedComparator: comparator.encode()
 
-					result = []
 					server.rpc.Mutate req, cb
 
 
@@ -411,7 +409,7 @@ module.exports = class Client extends EventEmitter
 
 
 	mget: (table, rows, columns, opts, cb) =>
-		return cb "Input is expected to be an array" unless Array.isArray(rows) and rows.length > 0
+		return cb "Input is expected to be a non-empty array" unless Array.isArray(rows) and rows.length > 0
 		debug "mget on table: #{table} #{rows.length} rows"
 
 		if typeof columns is 'function'
@@ -442,7 +440,7 @@ module.exports = class Client extends EventEmitter
 
 
 	mput: (table, rows, opts, cb) =>
-		return cb "Input is expected to be an array" unless Array.isArray(rows) and rows.length > 0
+		return cb "Input is expected to be a non-empty array" unless Array.isArray(rows) and rows.length > 0
 		debug "mput on table: #{table} #{rows.length} rows"
 
 		if typeof columns is 'function'
@@ -474,7 +472,7 @@ module.exports = class Client extends EventEmitter
 
 
 	mdelete: (table, rows, opts, cb) =>
-		return cb "Input is expected to be an array" unless Array.isArray(rows) and rows.length > 0
+		return cb "Input is expected to be a non-empty array" unless Array.isArray(rows) and rows.length > 0
 		debug "mdelete on table: #{table} #{rows.length} rows"
 
 		if typeof columns is 'function'
@@ -497,6 +495,29 @@ module.exports = class Client extends EventEmitter
 
 		@processBatch table, workingList, true, 0, (err, results) =>
 			cb err, results
+
+
+	increment: (table, increment, cb) =>
+		debug "increment on table: #{table} increment: #{JSON.stringify increment}"
+		@_action 'increment', table, increment, cb
+
+
+	incrementColumnValue: (table, row, cf, qualifier, value, cb) =>
+		increment = new Increment row
+		increment.add cf, qualifier, value
+		@increment table, increment, cb
+
+
+	mutateRow: () =>
+		throw new Error 'mutateRow not implemented'
+
+
+	append: () =>
+		throw new Error 'append is not implemented'
+
+
+	getRowOrBefore: () =>
+		throw new Error 'getRowOrBefore is not implemented'
 
 
 	processBatch: (table, workingList, useCache, retry, cb) =>

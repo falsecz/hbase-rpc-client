@@ -17,9 +17,9 @@ Features:
 * [√] scan:
 	 * [√]filter
 	 * [√]filterList
+* [√] increment
+* [√] incrementColumnValue
 * [ ] getRowOrBefore
 * [ ] mutateRow
 * [ ] append
-* [ ] increment
-* [ ] incrementColumnValue
 
