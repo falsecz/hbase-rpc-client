@@ -1,0 +1,10 @@
+language: node_js
+
+node_js:
+  - "0.10"
+
+before_script:
+  - "export HBASE_FILE=hbase-0.98.2-hadoop2-bin"
+  - "wget http://www.eu.apache.org/dist/hbase/hbase-0.98.2/$HBASE_FILE.tar.gz"
+  - "tar -xvzf $HBASE_FILE.tar.gz"
+  - "$HBASE_FILE/bin/hbase org.apache.hadoop.hbase.util.RegionSplitter mrdka HexStringSplit -c 10 -f cf1"

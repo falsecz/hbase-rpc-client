@@ -41,8 +41,8 @@ describe 'hbase', () ->
 
 	client = hbase
 		#zookeeperHosts: ['10.11.0.192']
-		zookeeperHosts: ['192.168.57.101']
-		#zookeeperHosts: ['localhost']
+		# zookeeperHosts: ['192.168.57.101']
+		zookeeperHosts: ['localhost']
 		zookeeperRoot: '/hbase'
 
 	it 'should put single row', (done) ->
