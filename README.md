@@ -36,6 +36,7 @@ client = hbase
 ```
 
 * put:
+
 ### `put table, put, callback`
 ```cs
 put = new hbase.Put rowKey
@@ -46,6 +47,7 @@ client.put table, put, (err, res) ->
 ```
 
 * get:
+
 ### `get table, get, callback`
 ```cs
 get = new hbase.Get rowKey
@@ -55,6 +57,7 @@ client.get table, get, (err, res) ->
 ```
 
 * delete:
+
 ### `delete table, delete, callback`
 ```cs
 delete = new hbase.Delete rowKey
@@ -64,7 +67,9 @@ client.delete table, delete, (err, res) ->
 ```
 
 * mput:
+
 ### `mput table, arrayOfPutObjects, callback`
+
 ### `mput table, arrayOfObjects, callback`
 ```cs
 put1 = new hbase.Put rowKey1
@@ -90,7 +95,9 @@ client.mput table, [put1, put2], (err, res) ->
 ```
 
 * mget:
+
 ### `mget table, arrayOfGetObjects, callback`
+
 ### `mget table, arrayOfObjects, callback`
 ```cs
 get1 = new hbase.Get rowKey1
@@ -105,7 +112,9 @@ client.get table, [rowKey1, rowKey2], (err, res) ->
 ```
 
 * mdelete:
+
 ### `mdelete table, arrayOfDeleteObjects, callback`
+
 ### `mdelete table, arrayOfObjects, callback`
 ```cs
 delete1 = new hbase.Delete rowKey1
@@ -120,11 +129,17 @@ client.delete table, [rowKey1, rowKey2], (err, res) ->
 ```
 
 * scan:
+
 ### `scanner = getScanner table, startRow, stopRow`
+
 ### `scanner.setFilter filter`
+
 ### `scanner.next stopRow`
+
 ### `scanner.each function, callback`
+
 ### `scanner.toArray callback`
+
 ### `scanner.close()`
 ```cs
 scan = client.getScanner table
