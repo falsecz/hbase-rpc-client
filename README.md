@@ -19,9 +19,9 @@ Features:
 	 * [√]filterList
 * [√] increment
 * [√] incrementColumnValue
-* [ ] getRowOrBefore
-* [ ] mutateRow
-* [ ] append
+* [x] getRowOrBefore
+* [x] mutateRow
+* [x] append
 
 
 
@@ -232,3 +232,4 @@ client.incrementColumnValue table, rowKey, cf, qualifier, incrementValue, (err, 
 
 
 
+node-hbase is made available under the Apache License, version 2.0
