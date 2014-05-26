@@ -15,8 +15,8 @@ Features:
 * [x] checkAndPut
 * [x] checkAndDelete
 * [x] scan:
-	 * [√]filter
-	 * [√]filterList
+	 * [√] filter
+	 * [√] filterList
 * [x] increment
 * [x] incrementColumnValue
 * [ ] getRowOrBefore
@@ -121,7 +121,7 @@ client.delete table, [rowKey1, rowKey2], (err, res) ->
 ### scan
 ##### `scanner = getScanner table, startRow, stopRow`
 ##### `scanner.setFilter filter`
-##### `scanner.next stopRow`
+##### `scanner.next callback`
 ##### `scanner.each function, callback`
 ##### `scanner.toArray callback`
 ##### `scanner.close()`
@@ -226,9 +226,6 @@ client.increment table, increment, (err, res) ->
 client.incrementColumnValue table, rowKey, cf, qualifier, incrementValue, (err, res) ->
 	console.log arguments
 ```
-
-
-
 
 
 ## License
