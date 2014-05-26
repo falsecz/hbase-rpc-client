@@ -6,22 +6,22 @@ WIP! CoffeeScript HBase Implementation with protobuf support based on https://gi
 
 
 Features:
-* [√] get
-* [√] put
-* [√] delete
-* [√] mget
-* [√] mput
-* [√] mdelete
-* [√] checkAndPut
-* [√] checkAndDelete
-* [√] scan:
-	 * [√]filter
-	 * [√]filterList
-* [√] increment
-* [√] incrementColumnValue
-* [x] getRowOrBefore
-* [x] mutateRow
-* [x] append
+* [x] get
+* [x] put
+* [x] delete
+* [x] mget
+* [x] mput
+* [x] mdelete
+* [x] checkAndPut
+* [x] checkAndDelete
+* [x] scan:
+	 * [x]filter
+	 * [x]filterList
+* [x] increment
+* [x] incrementColumnValue
+* [ ] getRowOrBefore
+* [ ] mutateRow
+* [ ] append
 
 
 
@@ -231,5 +231,6 @@ client.incrementColumnValue table, rowKey, cf, qualifier, incrementValue, (err, 
 
 
 
+## License
 
 node-hbase is made available under the Apache License, version 2.0
