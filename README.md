@@ -28,11 +28,11 @@ Features:
 
 * Create a hbase client through zookeeper:
 ```cs
-hbase = require 'node-hbase'
+hbase = require "node-hbase"
 
 client = hbase
-	zookeeperHosts: ['localhost']
-	zookeeperRoot: '/hbase'
+	zookeeperHosts: ["localhost"]
+	zookeeperRoot: "/hbase"
 ```
 
 * put:
@@ -152,7 +152,7 @@ filter1 =
 	singleColumnValueFilter:
 		columnFamily: cf1
 		columnQualifier: qualifier1
-		compareOp: 'EQUAL'
+		compareOp: "EQUAL"
 		comparator:
 			substringComparator:
 				substr: value1
@@ -163,7 +163,7 @@ filter2 =
 	singleColumnValueFilter:
 		columnFamily: cf2
 		columnQualifier: qualifier2
-		compareOp: 'EQUAL'
+		compareOp: "EQUAL"
 		comparator:
 			substringComparator:
 				substr: value2
@@ -172,7 +172,7 @@ filter2 =
 
 filterList1 = new hbase.FilterList
 filterList2 = new hbase.FilterList
-filterList3 = new hbase.FilterList 'MUST_PASS_ONE'
+filterList3 = new hbase.FilterList "MUST_PASS_ONE"
 
 filterList1.addFilter f1
 filterList2.addFilter f2
