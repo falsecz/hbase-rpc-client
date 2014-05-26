@@ -64,8 +64,8 @@ client.delete table, delete, (err, res) ->
 ```
 
 ## mput:
-### `mput table, arrayOfPutObjects, callback
-mput table, arrayOfObjects, callback`
+### `mput table, arrayOfPutObjects, callback`
+### `mput table, arrayOfObjects, callback`
 ```cs
 put1 = new hbase.Put rowKey1
 put1.add cf1, qualifier1, value1
