@@ -56,9 +56,9 @@ client.get table, get, (err, res) ->
 ### delete
 ##### `delete table, delete, callback`
 ```coffeescript
-delete = new hbase.Delete rowKey
+del = new hbase.Delete rowKey
 
-client.delete table, delete, (err, res) ->
+client.delete table, del, (err, res) ->
 	console.log arguments
 ```
 
@@ -203,9 +203,9 @@ client.checkAndPut table, rowKey2, cf2, qualifier2, value2, put, (err, res) ->
 ### checkAndDelete
 ##### `checkAndDelete table, rowKey, cf, qualifier, value, deleteObject, callback`
 ```coffeescript
-delete = new hbase.Put rowKey1
+del = new hbase.Put rowKey1
 
-client.checkAndDelete table, rowKey2, cf2, qualifier2, value2, delete, (err, res) ->
+client.checkAndDelete table, rowKey2, cf2, qualifier2, value2, del, (err, res) ->
 	console.log arguments
 ```
 
