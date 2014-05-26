@@ -2,12 +2,20 @@ assert = require 'assert'
 async = require 'async'
 ByteBuffer = require '../node_modules/protobufjs/node_modules/bytebuffer'
 
+blanket = (require 'blanket')()
 
 # create pre-splitted table
 # hbase org.apache.hadoop.hbase.util.RegionSplitter mrdka HexStringSplit -c 10 -f cf1
 
 
 describe 'hbase', () ->
+	before ->
+		matchesBlanket = (path) -> path.match /node_modules\/blanket/
+		runningTestCoverage = Object.keys(require.cache).filter(matchesBlanket).length > 0
+		console.log 'xxxx', runningTestCoverage
+		if runningTestCoverage
+			require('require-dir')("#{__dirname}/../lib", {recurse: true, duplicates: true})
+
 	@_timeout = 10000
 
 	tCf = 'cf1'
