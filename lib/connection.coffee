@@ -102,11 +102,11 @@ module.exports = class Connection extends EventEmitter
 		@socket.setNoDelay @tcpNoDelay
 		@socket.setKeepAlive @tcpKeepAlive
 
-		@socket.on "timeout", @_handleTimeout.bind @
-		@socket.on "close", @_handleClose.bind @
+		@socket.on "timeout", @_handleTimeout
+		@socket.on "close", @_handleClose
 
 		# when error, response all calls error
-		@socket.on "error", @_handleError.bind @
+		@socket.on "error", @_handleError
 
 		# send ping
 		#@_pingTimer = setInterval @sendPing.bind @, @pingInterval
@@ -123,7 +123,7 @@ module.exports = class Connection extends EventEmitter
 		debug "_handleError #{JSON.stringify arguments}"
 
 
-	_handleTimeout: () =>
+	_handleTimeout: () ->
 		debug "_handleTimeout #{JSON.stringify arguments}"
 
 

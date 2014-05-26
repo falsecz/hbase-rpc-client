@@ -33,7 +33,8 @@ module.exports = class Client extends EventEmitter
 		super()
 
 		options.zookeeperRoot = options.zookeeperRoot or "/hbase"
-		options.zookeeperHosts = options.zookeeper.quorum.split(SERVERNAME_SEPARATOR) if options.zookeeper and typeof options.zookeeper.quorum is "string"
+		if options.zookeeper and typeof options.zookeeper.quorum is "string"
+			options.zookeeperHosts = options.zookeeper.quorum.split(SERVERNAME_SEPARATOR)
 
 		@zk = new ZooKeeperWatcher
 			hosts: options.zookeeperHosts
@@ -172,7 +173,7 @@ module.exports = class Client extends EventEmitter
 					cb null, region
 
 
-	_parseRegionInfo: (res) =>
+	_parseRegionInfo: (res) ->
 		return null unless Object.keys(res).length
 
 		regionInfo = res.cols['info:regioninfo'].value
@@ -219,7 +220,7 @@ module.exports = class Client extends EventEmitter
 			server: region.server.toString()
 
 
-	_parseResponse: (res) =>
+	_parseResponse: (res) ->
 		return null unless res?.cell?.length
 
 		# TODO: upravit strukturu
@@ -252,7 +253,7 @@ module.exports = class Client extends EventEmitter
 		o
 
 
-	createRegionName: (table, startKey, id, newFormat) =>
+	createRegionName: (table, startKey, id, newFormat) ->
 		table = new Buffer table unless Buffer.isBuffer table
 		startKey = new Buffer(startKey or 0)
 		id = new Buffer(id?.toString() or 0)
@@ -363,7 +364,7 @@ module.exports = class Client extends EventEmitter
 							result.push o if o
 
 					done()
-		, (err) =>
+		, (err) ->
 			cb err, result
 
 
@@ -439,7 +440,7 @@ module.exports = class Client extends EventEmitter
 			get.method = 'get'
 			workingList.push get
 
-		@processBatch table, workingList, true, 0, (err, results) =>
+		@processBatch table, workingList, true, 0, (err, results) ->
 			cb err, results
 
 
@@ -471,7 +472,7 @@ module.exports = class Client extends EventEmitter
 			put.method = 'put'
 			workingList.push put
 
-		@processBatch table, workingList, true, 0, (err, results) =>
+		@processBatch table, workingList, true, 0, (err, results) ->
 			cb err, results
 
 
@@ -497,7 +498,7 @@ module.exports = class Client extends EventEmitter
 			del.method = 'delete'
 			workingList.push del
 
-		@processBatch table, workingList, true, 0, (err, results) =>
+		@processBatch table, workingList, true, 0, (err, results) ->
 			cb err, results
 
 
@@ -512,15 +513,15 @@ module.exports = class Client extends EventEmitter
 		@increment table, increment, cb
 
 
-	mutateRow: () =>
+	mutateRow: () ->
 		throw new Error 'mutateRow not implemented'
 
 
-	append: () =>
+	append: () ->
 		throw new Error 'append is not implemented'
 
 
-	getRowOrBefore: () =>
+	getRowOrBefore: () ->
 		throw new Error 'getRowOrBefore is not implemented'
 
 
@@ -537,7 +538,7 @@ module.exports = class Client extends EventEmitter
 		return cb null, [] if workingList.length is 0
 
 		async.each workingList, (row, done) =>
-			@locateRegion table, row.getRow(), useCache, (err, location) =>
+			@locateRegion table, row.getRow(), useCache, (err, location) ->
 				return done err if err
 
 				actionsByServer[location.server] ?= {}

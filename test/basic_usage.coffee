@@ -48,8 +48,7 @@ describe 'hbase', () ->
 	hbase = require '../index.coffee'
 
 	client = hbase
-		#zookeeperHosts: ['10.11.0.192']
-		# zookeeperHosts: ['192.168.57.101']
+		#zookeeperHosts: ['192.168.57.101']
 		zookeeperHosts: ['localhost']
 		zookeeperRoot: '/hbase'
 

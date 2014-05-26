@@ -79,7 +79,8 @@ module.exports.Scan = class Scan
 			req.scan.filter = @filter if @filter
 
 			@row++
-			debug "scan on table: #{@table} row: #{@row} region: #{@location.name.toString()} startRow: #{@startRow} stopRow: #{@stopRow}"
+			region = @location.name.toString()
+			debug "scan on: #{@table} row: #{@row} region: #{region} startRow: #{@startRow} stopRow: #{@stopRow}"
 			@server.rpc.Scan req, (err, response) =>
 				return cb err if err
 
@@ -89,13 +90,16 @@ module.exports.Scan = class Scan
 				clearTimeout @timeout if @timeout
 				@timeout = setTimeout @close, response.ttl
 
+				len = response.results.length
 				# we didn't finish scanning of the current region
-				if response.results.length is @numCached \
-					# or there are no more regions to scan
-					or @location.endKey.length is 0 \
-					# or stopRow was contained in the current region
-					or @stopRow and (utils.bufferCompare(@location.endKey, new Buffer @stopRow) > 0) and response.results.length isnt @numCached
-						nextRegion = no
+				if len is @numCached
+					nextRegion = no
+				# or there are no more regions to scan
+				if @location.endKey.length is 0
+					nextRegion = no
+				# or stopRow was contained in the current region
+				if @stopRow and (utils.bufferCompare(@location.endKey, new Buffer @stopRow) > 0) and len isnt @numCached
+					nextRegion = no
 
 				# we need to go to another region
 				if response.results.length < @numCached
@@ -124,7 +128,7 @@ module.exports.Scan = class Scan
 		@client.locateRegion table, startRow, (err, location) =>
 			return cb err if err
 
-			@client.getRegionConnection location.server.toString(), (err, server) =>
+			@client.getRegionConnection location.server.toString(), (err, server) ->
 				return cb err if err
 
 				cb null, server, location
@@ -143,7 +147,7 @@ module.exports.Scan = class Scan
 			cb null, (@cached.splice 0, 1)[0]
 
 
-	closeScan: (server, location, scannerId) =>
+	closeScan: (server, location, scannerId) ->
 		req =
 			region:
 				type: "REGION_NAME"
@@ -151,7 +155,7 @@ module.exports.Scan = class Scan
 			closeScanner: yes
 			scannerId: scannerId
 
-		server.rpc.Scan req, (err, response) =>
+		server.rpc.Scan req, (err, response) ->
 
 
 	close: () =>
@@ -165,7 +169,7 @@ module.exports.Scan = class Scan
 		async.whilst () ->
 			work
 		, (done) =>
-			@next (err, row) =>
+			@next (err, row) ->
 				return done err if err
 
 				unless row.row
