@@ -26,7 +26,7 @@ Features:
 
 
 ### Create a hbase client through zookeeper
-```cs
+```coffeescript
 hbase = require "node-hbase"
 
 client = hbase
@@ -36,7 +36,7 @@ client = hbase
 
 ### put
 ##### `put table, put, callback`
-```cs
+```coffeescript
 put = new hbase.Put rowKey
 put.add cf, qualifier, value
 
@@ -46,7 +46,7 @@ client.put table, put, (err, res) ->
 
 ### get
 ##### `get table, get, callback`
-```cs
+```coffeescript
 get = new hbase.Get rowKey
 
 client.get table, get, (err, res) ->
@@ -55,7 +55,7 @@ client.get table, get, (err, res) ->
 
 ### delete
 ##### `delete table, delete, callback`
-```cs
+```coffeescript
 delete = new hbase.Delete rowKey
 
 client.delete table, delete, (err, res) ->
@@ -65,7 +65,7 @@ client.delete table, delete, (err, res) ->
 ### mput
 ##### `mput table, arrayOfPutObjects, callback`
 ##### `mput table, arrayOfObjects, callback`
-```cs
+```coffeescript
 put1 = new hbase.Put rowKey1
 put1.add cf1, qualifier1, value1
 
@@ -75,7 +75,7 @@ put2.add cf2, qualifier2, value2
 client.mput table, [put1, put2], (err, res) ->
 	console.log arguments
 ```
-```cs
+```coffeescript
 put1 =
 	row: rowKey1
 put1["#{cf1}:#{qualifier1}"] = value1
@@ -91,14 +91,14 @@ client.mput table, [put1, put2], (err, res) ->
 ### mget
 ##### `mget table, arrayOfGetObjects, callback`
 ##### `mget table, arrayOfObjects, callback`
-```cs
+```coffeescript
 get1 = new hbase.Get rowKey1
 get2 = new hbase.Get rowKey2
 
 client.get table, [get1, get2], (err, res) ->
 	console.log arguments
 ```
-```cs
+```coffeescript
 client.get table, [rowKey1, rowKey2], (err, res) ->
 	console.log arguments
 ```
@@ -106,14 +106,14 @@ client.get table, [rowKey1, rowKey2], (err, res) ->
 ### mdelete
 ##### `mdelete table, arrayOfDeleteObjects, callback`
 ##### `mdelete table, arrayOfObjects, callback`
-```cs
+```coffeescript
 delete1 = new hbase.Delete rowKey1
 delete2 = new hbase.Delete rowKey2
 
 client.delete table, [delete1, delete2], (err, res) ->
 	console.log arguments
 ```
-```cs
+```coffeescript
 client.delete table, [rowKey1, rowKey2], (err, res) ->
 	console.log arguments
 ```
@@ -125,26 +125,26 @@ client.delete table, [rowKey1, rowKey2], (err, res) ->
 ##### `scanner.each function, callback`
 ##### `scanner.toArray callback`
 ##### `scanner.close()`
-```cs
+```coffeescript
 scan = client.getScanner table
 
 scan.next (err, row) ->
 	console.log arguments
 ```
-```cs
+```coffeescript
 scan = client.getScanner table, startRow, stopRow
 
 scan.next (err, row) ->
 	console.log arguments
 ```
-```cs
+```coffeescript
 scan = client.getScanner table
 scan.setFilter columnPrefixFilter: prefix: columnPrefix
 
 scan.next (err, row) ->
 	console.log arguments
 ```
-```cs
+```coffeescript
 scan = client.getScanner table
 
 filter1 =
@@ -183,7 +183,7 @@ scan.setFilter filterList3
 scan.toArray (err, res) ->
 	console.log arguments
 ```
-```cs
+```coffeescript
 scan = client.getScanner table
 
 scan.toArray (err, res) ->
@@ -192,7 +192,7 @@ scan.toArray (err, res) ->
 
 ### checkAndPut
 ##### `checkAndPut table, rowKey, cf, qualifier, value, putObject, callback`
-```cs
+```coffeescript
 put = new hbase.Put rowKey1
 put.add cf1, qualifier1, value1
 
@@ -202,7 +202,7 @@ client.checkAndPut table, rowKey2, cf2, qualifier2, value2, put, (err, res) ->
 
 ### checkAndDelete
 ##### `checkAndDelete table, rowKey, cf, qualifier, value, deleteObject, callback`
-```cs
+```coffeescript
 delete = new hbase.Put rowKey1
 
 client.checkAndDelete table, rowKey2, cf2, qualifier2, value2, delete, (err, res) ->
@@ -211,7 +211,7 @@ client.checkAndDelete table, rowKey2, cf2, qualifier2, value2, delete, (err, res
 
 ### increment
 ##### `increment table, incrementObject, callback`
-```cs
+```coffeescript
 increment = new hbase.Increment rowKey
 increment.add cf1, qualifier1, incrementValue1
 increment.add cf2, qualifier2, incrementValue2
@@ -222,7 +222,7 @@ client.increment table, increment, (err, res) ->
 
 ### incrementColumnValue
 ##### `incrementColumnValue table, rowKey, cf, qualifier, value, callback`
-```cs
+```coffeescript
 client.incrementColumnValue table, rowKey, cf, qualifier, incrementValue, (err, res) ->
 	console.log arguments
 ```
