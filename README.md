@@ -15,8 +15,8 @@ Features:
 * [x] checkAndPut
 * [x] checkAndDelete
 * [x] scan:
-	 * [x]filter
-	 * [x]filterList
+	 * [√]filter
+	 * [√]filterList
 * [x] increment
 * [x] incrementColumnValue
 * [ ] getRowOrBefore
