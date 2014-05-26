@@ -4,7 +4,6 @@ node-hbase
 
 WIP! CoffeeScript HBase Implementation with protobuf support based on https://github.com/alibaba/node-hbase-client/
 
-For examples, please check test/basic_usage.coffee
 
 Features:
 * [√] get
@@ -26,7 +25,7 @@ Features:
 
 
 
-## Create a hbase client through zookeeper:
+### Create a hbase client through zookeeper
 ```cs
 hbase = require "node-hbase"
 
@@ -35,8 +34,8 @@ client = hbase
 	zookeeperRoot: "/hbase"
 ```
 
-## put:
-### `put table, put, callback`
+### put
+##### `put table, put, callback`
 ```cs
 put = new hbase.Put rowKey
 put.add cf, qualifier, value
@@ -45,8 +44,8 @@ client.put table, put, (err, res) ->
 	console.log arguments
 ```
 
-## get:
-### `get table, get, callback`
+### get
+##### `get table, get, callback`
 ```cs
 get = new hbase.Get rowKey
 
@@ -54,8 +53,8 @@ client.get table, get, (err, res) ->
 	console.log arguments
 ```
 
-## delete:
-### `delete table, delete, callback`
+### delete
+##### `delete table, delete, callback`
 ```cs
 delete = new hbase.Delete rowKey
 
@@ -63,9 +62,9 @@ client.delete table, delete, (err, res) ->
 	console.log arguments
 ```
 
-## mput:
-### `mput table, arrayOfPutObjects, callback`
-### `mput table, arrayOfObjects, callback`
+### mput
+##### `mput table, arrayOfPutObjects, callback`
+##### `mput table, arrayOfObjects, callback`
 ```cs
 put1 = new hbase.Put rowKey1
 put1.add cf1, qualifier1, value1
@@ -89,9 +88,9 @@ client.mput table, [put1, put2], (err, res) ->
 	console.log arguments
 ```
 
-## mget:
-### `mget table, arrayOfGetObjects, callback`
-### `mget table, arrayOfObjects, callback`
+### mget
+##### `mget table, arrayOfGetObjects, callback`
+##### `mget table, arrayOfObjects, callback`
 ```cs
 get1 = new hbase.Get rowKey1
 get2 = new hbase.Get rowKey2
@@ -104,9 +103,9 @@ client.get table, [rowKey1, rowKey2], (err, res) ->
 	console.log arguments
 ```
 
-## mdelete:
-### `mdelete table, arrayOfDeleteObjects, callback`
-### `mdelete table, arrayOfObjects, callback`
+### mdelete
+##### `mdelete table, arrayOfDeleteObjects, callback`
+##### `mdelete table, arrayOfObjects, callback`
 ```cs
 delete1 = new hbase.Delete rowKey1
 delete2 = new hbase.Delete rowKey2
@@ -119,13 +118,13 @@ client.delete table, [rowKey1, rowKey2], (err, res) ->
 	console.log arguments
 ```
 
-## scan:
-### `scanner = getScanner table, startRow, stopRow`
-### `scanner.setFilter filter`
-### `scanner.next stopRow`
-### `scanner.each function, callback`
-### `scanner.toArray callback`
-### `scanner.close()`
+### scan
+##### `scanner = getScanner table, startRow, stopRow`
+##### `scanner.setFilter filter`
+##### `scanner.next stopRow`
+##### `scanner.each function, callback`
+##### `scanner.toArray callback`
+##### `scanner.close()`
 ```cs
 scan = client.getScanner table
 
@@ -191,8 +190,8 @@ scan.toArray (err, res) ->
 	console.log arguments
 ```
 
-## checkAndPut:
-### `checkAndPut table, rowKey, cf, qualifier, value, putObject, callback`
+### checkAndPut
+##### `checkAndPut table, rowKey, cf, qualifier, value, putObject, callback`
 ```cs
 put = new hbase.Put rowKey1
 put.add cf1, qualifier1, value1
@@ -201,8 +200,8 @@ client.checkAndPut table, rowKey2, cf2, qualifier2, value2, put, (err, res) ->
 	console.log arguments
 ```
 
-## checkAndDelete:
-### `checkAndDelete table, rowKey, cf, qualifier, value, deleteObject, callback`
+### checkAndDelete
+##### `checkAndDelete table, rowKey, cf, qualifier, value, deleteObject, callback`
 ```cs
 delete = new hbase.Put rowKey1
 
@@ -210,8 +209,8 @@ client.checkAndDelete table, rowKey2, cf2, qualifier2, value2, delete, (err, res
 	console.log arguments
 ```
 
-## increment:
-### `increment table, incrementObject, callback`
+### increment
+##### `increment table, incrementObject, callback`
 ```cs
 increment = new hbase.Increment rowKey
 increment.add cf1, qualifier1, incrementValue1
@@ -221,8 +220,8 @@ client.increment table, increment, (err, res) ->
 	console.log arguments
 ```
 
-## incrementColumnValue:
-### `incrementColumnValue table, rowKey, cf, qualifier, value, callback`
+### incrementColumnValue
+##### `incrementColumnValue table, rowKey, cf, qualifier, value, callback`
 ```cs
 client.incrementColumnValue table, rowKey, cf, qualifier, incrementValue, (err, res) ->
 	console.log arguments
