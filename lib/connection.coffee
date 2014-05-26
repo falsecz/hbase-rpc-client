@@ -1,28 +1,27 @@
-Readable = require('readable-stream').Readable
+debug           = (require 'debug') 'hbase-connection'
+net             = require 'net'
+hconstants      = require './hconstants'
+Call            = require './call'
+{EventEmitter}  = require 'events'
 DataInputStream = require './data-input-stream'
-Call = require './call'
 {DataOutputStream, DataOutputBuffer} = require './output-buffer'
-debug = (require 'debug') 'hbase-connection'
-net = require 'net'
-hconstants = require './hconstants'
-{EventEmitter} = require 'events'
 
 
-connectionId = 0
-
-ProtoBuf = require("protobufjs")
+ProtoBuf   = require 'protobufjs'
 ByteBuffer = require 'protobufjs/node_modules/bytebuffer'
 
-builder = ProtoBuf.loadProtoFile("#{__dirname}/../proto/Client.proto")
+builder    = ProtoBuf.loadProtoFile("#{__dirname}/../proto/Client.proto")
 rpcBuilder = ProtoBuf.loadProtoFile("#{__dirname}/../proto/RPC.proto")
 
-proto = builder.build()
-rpcProto = rpcBuilder.build()
+proto      = builder.build()
+rpcProto   = rpcBuilder.build()
 
 {ClientService, GetRequest} = proto
 {ConnectionHeader, RequestHeader, ResponseHeader} = rpcProto
 
 
+
+connectionId = 0
 module.exports = class Connection extends EventEmitter
 	constructor: (options) ->
 		@id = connectionId++
@@ -45,7 +44,7 @@ module.exports = class Connection extends EventEmitter
 	setupIOStreams: () =>
 		debug "connecting to #{@name}"
 		@setupConnection()
-		@in = new DataInputStream @socketReadable
+		@in = new DataInputStream @socket
 		@out = new DataOutputStream @socket
 
 		@in.on 'messages', @processMessages
@@ -99,13 +98,6 @@ module.exports = class Connection extends EventEmitter
 		ioFailures = 0
 		timeoutFailures = 0
 		@socket = net.connect @address
-		@socketReadable = @socket
-
-		if typeof @socketReadable.read isnt "function"
-			@socketReadable = new Readable()
-			@socketReadable.wrap @socket
-			# ignore error event
-			@socketReadable.on "error", utility.noop
 
 		@socket.setNoDelay @tcpNoDelay
 		@socket.setKeepAlive @tcpKeepAlive

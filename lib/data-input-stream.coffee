@@ -1,7 +1,8 @@
-debug = require('debug')('hbase:data_input_stream')
-Readable = require('readable-stream').Readable
-ByteBuffer = require 'protobufjs/node_modules/bytebuffer'
+debug          = require('debug')('hbase:data_input_stream')
+Readable       = require('readable-stream').Readable
+ByteBuffer     = require 'protobufjs/node_modules/bytebuffer'
 {EventEmitter} = require 'events'
+
 
 
 module.exports = class DataInputStream extends EventEmitter
@@ -50,13 +51,6 @@ module.exports = class DataInputStream extends EventEmitter
 		messages = []
 		messages.push readDelimited() while payload.remaining()
 		@.emit 'messages', messages
-
-
-
-
-
-
-
 
 
 

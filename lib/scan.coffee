@@ -1,11 +1,12 @@
-debug = (require 'debug') 'hbase-client'
-utils = require './utils'
-async = require 'async'
-
+debug    = (require 'debug') 'hbase-client'
+utils    = require './utils'
+async    = require 'async'
 ProtoBuf = require("protobufjs")
+
 ProtoBuf.convertFieldsToCamelCase = true
 builder = ProtoBuf.loadProtoFile("#{__dirname}/../proto/Filter.proto")
 proto = builder.build()
+
 
 
 module.exports.getFilter = getFilter = (filter) ->

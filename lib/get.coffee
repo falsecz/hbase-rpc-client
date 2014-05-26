@@ -1,7 +1,5 @@
 
 
-
-
 module.exports = class Get
 	constructor: (@row) ->
 		@tr =

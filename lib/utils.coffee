@@ -1,7 +1,5 @@
 
 
-
-
 module.exports =
 	bufferIncrement: (buffer, i) =>
 		b = new Buffer buffer

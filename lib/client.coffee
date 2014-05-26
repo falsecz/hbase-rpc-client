@@ -1,27 +1,31 @@
+debug            = (require 'debug') 'hbase-client'
+rDebug           = (require 'debug') 'hbase-region'
+zkDebug          = (require 'debug') 'zk'
+zkProto          = require './zk-protobuf'
+utils            = require './utils'
+crypto           = require 'crypto'
+async            = require 'async'
+hconstants       = require './hconstants'
+
+Connection       = require './connection'
+Get              = require './get'
+Put              = require './put'
+Delete           = require './delete'
+Increment        = require './increment'
+Scan             = require('./scan').Scan
+
 ZooKeeperWatcher = require 'zookeeper-watcher'
-{EventEmitter} = require 'events'
-zkProto = require './zk-protobuf'
-Connection = require './connection'
-Get = require './get'
-Put = require './put'
-Delete = require './delete'
-Increment = require './increment'
-Scan = require('./scan').Scan
-utils = require './utils'
-hconstants = require './hconstants'
-debugzk = (require 'debug') 'zk'
-debug = (require 'debug') 'hbase-client'
-rDebug = (require 'debug') 'hbase-region'
-crypto = require 'crypto'
-async = require 'async'
+{EventEmitter}   = require 'events'
 
 ProtoBuf = require("protobufjs")
 ProtoBuf.convertFieldsToCamelCase = true
 builder = ProtoBuf.loadProtoFile("#{__dirname}/../proto/Client.proto")
-proto = builder.build()
+proto   = builder.build()
+
 
 md5sum = (data) ->
 	crypto.createHash('md5').update(data).digest('hex')
+
 
 
 module.exports = class Client extends EventEmitter
@@ -55,7 +59,7 @@ module.exports = class Client extends EventEmitter
 					@_zkWatch()
 				, hconstants.SOCKET_RETRY_WAIT_MS
 
-				debugzk "[%s] [worker:%s] [hbase-client] zookeeper watch error: %s", new Date(), process.pid, err.stack
+				zkDebug "[%s] [worker:%s] [hbase-client] zookeeper watch error: %s", new Date(), process.pid, err.stack
 				if firstStart
 					# only first start fail will emit ready event
 					@zkStart = "error"
@@ -76,7 +80,7 @@ module.exports = class Client extends EventEmitter
 			# TODO: not needed
 			@getRegionConnection serverName, (err, server) =>
 				return cb err if err
-				debugzk "zookeeper start done, got new root #{serverName}, old #{oldServer?.hostName}:#{oldServer?.port}"
+				zkDebug "zookeeper start done, got new root #{serverName}, old #{oldServer?.hostName}:#{oldServer?.port}"
 
 				# only first start success will emit ready event
 				@emit "ready" if firstStart
@@ -93,7 +97,7 @@ module.exports = class Client extends EventEmitter
 		@zk.once "connected", (err) =>
 			if err
 				@zkStart = "error"
-				debugzk "[%s] [worker:%s] [hbase-client] zookeeper connect error: %s", new Date(), process.pid, err.stack
+				zkDebug "[%s] [worker:%s] [hbase-client] zookeeper connect error: %s", new Date(), process.pid, err.stack
 				return @emit "ready", err
 
 			@_zkWatch()

@@ -1,6 +1,7 @@
 ByteBuffer = require 'protobufjs/node_modules/bytebuffer'
 
 
+
 class DataOutputStream
 	constructor: (@out) ->
 		@written = 0
@@ -41,11 +42,10 @@ class DataOutputStream
 			@write buffer
 
 
-
-
 class DataOutputBuffer extends DataOutputStream
 	constructor: () ->
 		super()
+
 
 module.exports.DataOutputBuffer = DataOutputBuffer
 module.exports.DataOutputStream = DataOutputStream

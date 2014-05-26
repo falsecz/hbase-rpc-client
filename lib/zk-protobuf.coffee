@@ -1,10 +1,12 @@
-ProtoBuf = require("protobufjs")
+ProtoBuf   = require("protobufjs")
 ByteBuffer = require 'protobufjs/node_modules/bytebuffer'
 hconstants = require './hconstants'
 
 ProtoBuf.convertFieldsToCamelCase = true
 builder = ProtoBuf.loadProtoFile("#{__dirname}/../proto/ZooKeeper.proto")
 proto = builder.build()
+
+
 
 exports.decodeMeta = (data) ->
 	return if data[0] isnt hconstants.MAGIC
