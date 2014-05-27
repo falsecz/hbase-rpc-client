@@ -13,6 +13,7 @@ module.exports = class Put
 
 
 	add: (cf, qualifier, value, timestamp) =>
+		timestamp ?= @ts
 		timestamp ?= ByteBuffer.Long.MAX_VALUE
 
 		@familyMap[cf] ?= []

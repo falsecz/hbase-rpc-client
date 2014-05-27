@@ -20,12 +20,12 @@ module.exports = class Delete
 		@_add cf, qualifier, timestamp, 'DELETE_MULTIPLE_VERSIONS'
 
 
+	deleteFamilyVersion: (cf, timestamp) =>
+		@_add cf, null, timestamp, 'DELETE_FAMILY_VERSION'
+
+
 	deleteFamily: (cf, timestamp) =>
-		@_add cf, undefined, timestamp, 'DELETE_FAMILY'
-
-
-	deleteFamilies: (cf, timestamp) =>
-		@_add cf, undefined, timestamp, 'DELETE_FAMILY_VERSIONS'
+		@_add cf, null, timestamp, 'DELETE_FAMILY'
 
 
 	_add: (cf, qualifier, timestamp, deleteType) =>

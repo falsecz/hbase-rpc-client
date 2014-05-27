@@ -20,6 +20,7 @@ describe 'hbase', () ->
 	tCf = 'cf1'
 	tRow = '1'
 	tCol = 'col'
+	tVal = 'val'
 
 	# create pre-splitted table
 	# hbase org.apache.hadoop.hbase.util.RegionSplitter node-hbase-test-table HexStringSplit -c 10 -f cf1
@@ -52,37 +53,150 @@ describe 'hbase', () ->
 		zookeeperHosts: config.zookeeperHosts
 		zookeeperRoot: config.zookeeperRoot
 
-	it 'should put single row', (done) ->
-		put = new hbase.Put testRows[0].row
-		put.add testRows[0].cf, testRows[0].col, testRows[0].val
+
+	putRow = (row, cf, col, val, ts, cb) ->
+		if typeof ts is 'function'
+			cb = ts
+			ts = null
+
+		put = new hbase.Put row
+		put.add cf, col, val, ts
+
 		client.put testTable, put, (err, res) ->
 			assert.equal err, null
 			assert.equal res.processed, yes
-			done()
+			getRow row, cf, col, val, ts, cb
 
-	it 'should get single row', (done) ->
-		get = new hbase.Get testRows[0].row
-		get.addColumn testRows[0].cf, testRows[0].col
+	getRow = (row, cf, col, val, ts, cb) ->
+		if typeof ts is 'function'
+			cb = ts
+			ts = null
+
+		get = new hbase.Get row
+		get.addColumn cf, col
+
 		client.get testTable, get, (err, res) ->
 			assert.equal err, null
-			assert.equal res.row, testRows[0].row
-			assert.equal res.columns[0].family, testRows[0].cf
-			assert.equal res.columns[0].qualifier, testRows[0].col
-			assert.equal res.columns[0].value, testRows[0].val
-			done()
+			assert.equal res.row, row
+			assert.equal res.columns[0].family, cf
+			assert.equal res.columns[0].qualifier, col
+			assert.equal res.columns[0].timestamp.toString(), ts.toString() if ts
+			if typeof val is 'object'
+				assert.equal res.columns[0].value.toString(), val.toString()
+			else
+				assert.equal res.columns[0].value, val
+			cb res
 
-	it 'should delete row', (done) ->
-		del = new hbase.Delete testRows[0].row
-		del.deleteColumn testRows[0].cf, testRows[0].col
+	deleteRow = (row, cb) ->
+		del = new hbase.Delete row
+
 		client.delete testTable, del, (err, res) ->
 			assert.equal err, null
 			assert.equal res.processed, yes
+			rowDoesNotExist row, cb
 
-			get = new hbase.Get testRows[0].row
-			client.get testTable, get, (err, res) ->
-				assert.equal err, null
-				assert.equal res, null
-				done()
+	rowDoesNotExist = (row, cb) ->
+		get = new hbase.Get row
+
+		client.get testTable, get, (err, res) ->
+			assert.equal err, null
+			assert.equal res, null
+			cb()
+
+	it 'should put single row', (done) ->
+		putRow testRows[0].row, testRows[0].cf, testRows[0].col, testRows[0].val, () ->
+			done()
+
+	it 'should get single row', (done) ->
+		getRow testRows[0].row, testRows[0].cf, testRows[0].col, testRows[0].val, () ->
+			done()
+
+	it 'should delete row', (done) ->
+		deleteRow testRows[0].row, done
+
+	it 'should deleteColumn & deleteColumns', (done) ->
+		tests = [
+			(cb) ->
+				putRow tRow, tCf, tCol, tVal, cb
+		,
+			(cb) ->
+				putRow tRow, tCf, tCol, tVal + '1', cb
+		,
+			(cb) ->
+				putRow tRow, tCf, tCol, tVal + '2', cb
+		,
+			(cb) ->
+				del = new hbase.Delete tRow
+				del.deleteColumn tCf, tCol
+
+				client.delete testTable, del, (err, res) ->
+					assert.equal err, null
+					assert.equal res.processed, yes
+					cb()
+		,
+			(cb) ->
+				getRow tRow, tCf, tCol, tVal + '1', cb
+		,
+			(cb) ->
+				del = new hbase.Delete tRow
+				del.deleteColumns tCf, tCol
+
+				client.delete testTable, del, (err, res) ->
+					assert.equal err, null
+					assert.equal res.processed, yes
+					cb()
+		,
+			(cb) ->
+				rowDoesNotExist tRow, cb
+		]
+
+		async.waterfall tests, () ->
+			done()
+
+	it 'should deleteFamily & deleteFamilies', (done) ->
+		ts = null
+		tests = [
+			(cb) ->
+				putRow tRow, tCf, tCol, tVal, (row) ->
+					ts = row.cols["#{tCf}:#{tCol}"].timestamp
+					cb()
+		,
+			(cb) ->
+				putRow tRow, tCf, tCol, tVal + '1', (++ts).toString(), () ->
+					cb()
+		,
+			(cb) ->
+				putRow tRow, tCf, tCol, tVal + '2', (++ts).toString(), () ->
+					cb()
+		,
+			(cb) ->
+				del = new hbase.Delete tRow
+				del.deleteFamilyVersion tCf, ts
+
+				client.delete testTable, del, (err, res) ->
+					assert.equal err, null
+					assert.equal res.processed, yes
+					cb()
+		,
+			(cb) ->
+				getRow tRow, tCf, tCol, tVal + '1', (--ts).toString(), () ->
+					cb()
+		,
+			(cb) ->
+				del = new hbase.Delete tRow
+				del.deleteFamily tCf
+
+				client.delete testTable, del, (err, res) ->
+					assert.equal err, null
+					assert.equal res.processed, yes
+					cb()
+		,
+			(cb) ->
+				rowDoesNotExist tRow, cb
+		]
+
+		async.waterfall tests, () ->
+			done()
 
 	it 'should put multiple rows via array of Put objects', (done) ->
 		puts = testRows.map (row) ->
@@ -157,10 +271,9 @@ describe 'hbase', () ->
 		, () ->
 			done()
 
-
-
 	it 'should scan the table with startRow and stopRow', (done) ->
 		scan = client.getScanner testTable, '5', '6'
+
 		scan.next (err, row) ->
 			assert.equal err, null
 			assert.equal row.row, testRows[1].row
@@ -173,6 +286,7 @@ describe 'hbase', () ->
 	it 'should scan the table with filter', (done) ->
 		scan = client.getScanner testTable
 		scan.setFilter columnPrefixFilter: prefix: testRows[2].col
+
 		scan.next (err, row) ->
 			assert.equal err, null
 			assert.equal row.row, testRows[2].row
@@ -188,6 +302,7 @@ describe 'hbase', () ->
 		fl = new hbase.FilterList
 		fl.addFilter columnPrefixFilter: prefix: testRows[2].col
 		scan.setFilter fl
+
 		scan.next (err, row) ->
 			assert.equal err, null
 			assert.equal row.row, testRows[2].row
@@ -197,6 +312,18 @@ describe 'hbase', () ->
 				assert.equal err, null
 				assert.equal Object.keys(row), 0
 				done()
+
+	it 'should scan the table and convert result to array', (done) ->
+		scan = client.getScanner testTable
+
+		scan.toArray (err, res) ->
+			assert.equal err, null
+
+			for i, row of testRows
+				assert.equal res[i].row, testRows[i].row
+				assert.equal res[i].cols["#{testRows[i].cf}:#{testRows[i].col}"].value, testRows[i].val
+
+			done()
 
 	it 'should scan the table with filterList consisting of multiple filterLists', (done) ->
 		scan = client.getScanner testTable
@@ -234,6 +361,7 @@ describe 'hbase', () ->
 		fl3.addFilter fl2
 
 		scan.setFilter fl3
+
 		scan.toArray (err, res) ->
 			assert.equal err, null
 
@@ -242,17 +370,6 @@ describe 'hbase', () ->
 
 			assert.equal res[1].row, testRows[2].row
 			assert.equal res[1].cols["#{testRows[2].cf}:#{testRows[2].col}"].value, testRows[2].val
-			done()
-
-	it 'should scan the table and convert result to array', (done) ->
-		scan = client.getScanner testTable
-		scan.toArray (err, res) ->
-			assert.equal err, null
-
-			for i, row of testRows
-				assert.equal res[i].row, testRows[i].row
-				assert.equal res[i].cols["#{testRows[i].cf}:#{testRows[i].col}"].value, testRows[i].val
-
 			done()
 
 	it 'should delete multiple rows via simple array', (done) ->
@@ -269,13 +386,7 @@ describe 'hbase', () ->
 				done()
 
 	it 'should checkAndPut', (done) ->
-		put = new hbase.Put testRows[0].row
-		put.add testRows[0].cf, testRows[0].col, testRows[0].val
-
-		client.put testTable, put, (err, res) ->
-			assert.equal err, null
-			assert.equal res.processed, yes
-
+		putRow testRows[0].row, testRows[0].cf, testRows[0].col, testRows[0].val, () ->
 			put = new hbase.Put testRows[0].row
 			put.add testRows[0].cf, testRows[0].col, randomValue
 
@@ -286,6 +397,7 @@ describe 'hbase', () ->
 
 	it 'should checkAndDelete', (done) ->
 		del = new hbase.Delete testRows[0].row
+
 		client.checkAndDelete testTable, testRows[0].row, testRows[0].cf, testRows[0].col, randomValue, del, (err, res) ->
 			assert.equal err, null
 			assert.equal res.processed, yes
@@ -305,15 +417,10 @@ describe 'hbase', () ->
 
 		tests = [
 			(cb) ->
-				put = new hbase.Put tRow
-				put.add tCf, tCol, b
-				client.put testTable, put, (err, res) ->
-					assert.equal err, null
-					assert.equal res.processed, yes
-					cb()
+				putRow tRow, tCf, tCol, b, cb
 		,
 			(cb) ->
-				increment = new hbase.Increment '1'
+				increment = new hbase.Increment tRow
 				increment.add tCf, tCol, inc
 
 				client.increment testTable, increment, (err, res) ->
@@ -330,11 +437,7 @@ describe 'hbase', () ->
 					cb()
 		,
 			(cb) ->
-				del = new hbase.Delete '1'
-				client.delete testTable, del, (err, res) ->
-					assert.equal err, null
-					assert.equal res.processed, yes
-					cb()
+				deleteRow tRow, cb
 		]
 
 		async.waterfall tests, () ->
