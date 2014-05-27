@@ -34,10 +34,11 @@ module.exports = class Get
 			timeRange: @tr
 			column: []
 
-		for cf, qualifier of @familyMap
-			o.column.push
+		for cf, qualifiers of @familyMap
+			o.column =
 				family: cf
-				qualifierValue: qualifier
+				qualifier: qualifiers.map (qualifier) ->
+					qualifier
 
 		o
 

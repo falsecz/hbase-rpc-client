@@ -15,26 +15,28 @@ module.exports.getFilter = getFilter = (filter) ->
 	if filter instanceof FilterList
 		filterList =  new proto.FilterList filter.get()
 
-		name: 'org.apache.hadoop.hbase.filter.FilterList'
-		serializedFilter: filterList.encode()
-	else
-		#exception kdyz jich bude vic
-		filterName = Object.keys(filter)[0]
-		filterNameUpper = "#{filterName[0].toUpperCase()}#{filterName[1..]}"
-
-		unless proto[filterNameUpper]
-			console.log "Invalid filter #{filterNameUpper}"
-			return false
-
-		if filterNameUpper in ['SingleColumnValueFilter']
-			filter[filterName].comparator = getFilter filter[filterName].comparator
-
 		o =
-			name: "org.apache.hadoop.hbase.filter.#{filterNameUpper}"
-		serialized = 'serializedFilter'
-		serialized = 'serializedComparator' if filterNameUpper.indexOf('Comparator') >= 0
-		o[serialized] = new proto[filterNameUpper](filter[filterName]).encode()
-		o
+			name: 'org.apache.hadoop.hbase.filter.FilterList'
+			serializedFilter: filterList.encode()
+		return o
+
+	#exception kdyz jich bude vic
+	filterName = Object.keys(filter)[0]
+	filterNameUpper = "#{filterName[0].toUpperCase()}#{filterName[1..]}"
+
+	unless proto[filterNameUpper]
+		console.log "Invalid filter #{filterNameUpper}"
+		return false
+
+	if filterNameUpper in ['SingleColumnValueFilter']
+		filter[filterName].comparator = getFilter filter[filterName].comparator
+
+	o =
+		name: "org.apache.hadoop.hbase.filter.#{filterNameUpper}"
+	serialized = 'serializedFilter'
+	serialized = 'serializedComparator' if filterNameUpper.indexOf('Comparator') >= 0
+	o[serialized] = new proto[filterNameUpper](filter[filterName]).encode()
+	o
 
 
 module.exports.Scan = class Scan
@@ -84,42 +86,45 @@ module.exports.Scan = class Scan
 			@server.rpc.Scan req, (err, response) =>
 				return cb err if err
 
-				nextRegion = yes
-				@nextStartRow = null
-				@scannerId = response.scannerId
-				clearTimeout @timeout if @timeout
-				@timeout = setTimeout @close, response.ttl
+				@_processResponse response, cb
 
-				len = response.results.length
-				# we didn't finish scanning of the current region
-				if len is @numCached
-					nextRegion = no
-				# or there are no more regions to scan
-				if @location.endKey.length is 0
-					nextRegion = no
-				# or stopRow was contained in the current region
-				if @stopRow and (utils.bufferCompare(@location.endKey, new Buffer @stopRow) > 0) and len isnt @numCached
-					nextRegion = no
 
-				# we need to go to another region
-				if response.results.length < @numCached
-					@nextStartRow = utils.bufferIncrement @location.endKey
-					@nextStartRow = @nextStartRow.toString()
+	_processResponse: (response, cb) =>
+		nextRegion = yes
+		@nextStartRow = null
+		@scannerId = response.scannerId
+		clearTimeout @timeout if @timeout
+		@timeout = setTimeout @close, response.ttl
 
-				# go to another region
-				if nextRegion
-					@closeScan @server, @location, @scannerId
-					@server = @location = @scannerId = null
-					return @_getData @nextStartRow, cb if response.results.length is 0
+		len = response.results.length
+		# we didn't finish scanning of the current region
+		if len is @numCached
+			nextRegion = no
+		# or there are no more regions to scan
+		if @location.endKey.length is 0
+			nextRegion = no
+		# or stopRow was contained in the current region
+		if @stopRow and utils.bufferCompare(@location.endKey, new Buffer @stopRow) > 0 and len isnt @numCached
+			nextRegion = no
 
-				@cached = []
-				for result in response.results
-					@cached.push @client._parseResponse result
+		# we need to go to another region
+		if len < @numCached
+			@nextStartRow = utils.bufferIncrement @location.endKey
+			@nextStartRow = @nextStartRow.toString()
 
-				# no more results anywhere.. close the scan
-				@close() if @cached.length is 0
+		# go to another region
+		if nextRegion
+			@closeScan @server, @location, @scannerId
+			@server = @location = @scannerId = null
+			return @_getData @nextStartRow, cb if len is 0
 
-				cb()
+		@cached = response.results.map (result) =>
+			@client._parseResponse result
+
+		# no more results anywhere.. close the scan
+		@close() if @cached.length is 0
+
+		cb()
 
 
 	getServerAndLocation: (table, startRow, cb) =>

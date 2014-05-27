@@ -226,9 +226,8 @@ module.exports = class Client extends EventEmitter
 		# TODO: upravit strukturu
 		row = null
 		cols = {}
-		columns = []
 
-		for cell in res.cell
+		columns = res.cell.map (cell) ->
 			row = cell.row.toBuffer()
 			f = cell.family.toBuffer()
 			q = cell.qualifier.toBuffer()
@@ -239,11 +238,10 @@ module.exports = class Client extends EventEmitter
 				value: v
 				timestamp: t
 
-			columns.push
-				family: f
-				qualifier: q
-				value: v
-				timestamp: t
+			family: f
+			qualifier: q
+			value: v
+			timestamp: t
 
 		o =
 			row: row
@@ -340,11 +338,11 @@ module.exports = class Client extends EventEmitter
 			for region, actions of multiActions[serverName]
 				operations = []
 
-				for action in actions
+				operations = actions.map (action) ->
 					if action.method is 'get'
-						operations.push gxt: action.getFields()
+						gxt: action.getFields()
 					else if action.method in ['put', 'delete']
-						operations.push mutation: action.getFields()
+						mutation: action.getFields()
 
 				req.regionAction.push
 					region:

@@ -48,9 +48,9 @@ describe 'hbase', () ->
 	hbase = require '../index.coffee'
 
 	client = hbase
-		#zookeeperHosts: ['192.168.57.101']
+		zookeeperHosts: ['192.168.57.101']
 		zookeeperHosts: ['localhost']
-		zookeeperRoot: '/hbase'
+		#zookeeperRoot: '/hbase'
 
 	it 'should put single row', (done) ->
 		put = new hbase.Put testRows[0].row
@@ -62,6 +62,7 @@ describe 'hbase', () ->
 
 	it 'should get single row', (done) ->
 		get = new hbase.Get testRows[0].row
+		get.addColumn testRows[0].cf, testRows[0].col
 		client.get testTable, get, (err, res) ->
 			assert.equal err, null
 			assert.equal res.row, testRows[0].row
@@ -72,6 +73,7 @@ describe 'hbase', () ->
 
 	it 'should delete row', (done) ->
 		del = new hbase.Delete testRows[0].row
+		del.deleteColumn testRows[0].cf, testRows[0].col
 		client.delete testTable, del, (err, res) ->
 			assert.equal err, null
 			assert.equal res.processed, yes
@@ -83,21 +85,18 @@ describe 'hbase', () ->
 				done()
 
 	it 'should put multiple rows via array of Put objects', (done) ->
-		puts = []
-		for row in testRows
+		puts = testRows.map (row) ->
 			put = new hbase.Put row.row
 			put.add row.cf, row.col, row.val
-			puts.push put
+			put
 
 		client.mput testTable, puts, (err, res) ->
 			assert.equal err, null
 			done()
 
 	it 'should get multiple rows via array of Get objects', (done) ->
-		gets = []
-		for row in testRows
-			get = new hbase.Get row.row
-			gets.push get
+		gets = testRows.map (row) ->
+			new hbase.Get row.row
 
 		client.mget testTable, gets, (err, res) ->
 			assert.equal err, null
@@ -105,12 +104,11 @@ describe 'hbase', () ->
 			done()
 
 	it 'should delete multiple rows via array of Delete objects', (done) ->
-		rows = []
-		dels = []
-		for row in testRows
-			rows.push row.row
-			del = new hbase.Delete row.row
-			dels.push del
+		rows = testRows.map (row) ->
+			row.row
+
+		dels = testRows.map (row) ->
+			new hbase.Delete row.row
 
 		client.mdelete testTable, dels, (err, res) ->
 			assert.equal err, null
@@ -123,20 +121,19 @@ describe 'hbase', () ->
 
 	it 'should put multiple rows via simple array', (done) ->
 		puts = []
-		for row in testRows
+		puts = testRows.map (row) ->
 			o =
 				row: row.row
 			o["#{row.cf}:#{row.col}"] = row.val
-			puts.push o
+			o
 
 		client.mput testTable, puts, (err, res) ->
 			assert.equal err, null
 			done()
 
 	it 'should get multiple rows via simple array', (done) ->
-		gets = []
-		for row in testRows
-			gets.push row.row
+		gets = testRows.map (row) ->
+			row.row
 
 		client.mget testTable, gets, (err, res) ->
 			assert.equal err, null
@@ -259,9 +256,8 @@ describe 'hbase', () ->
 			done()
 
 	it 'should delete multiple rows via simple array', (done) ->
-		rows = []
-		for row in testRows
-			rows.push row.row
+		rows = testRows.map (row) ->
+			row.row
 
 		client.mdelete testTable, rows, (err, res) ->
 			assert.equal err, null
@@ -307,30 +303,42 @@ describe 'hbase', () ->
 		b.writeLong 65
 		b = b.toBuffer()
 
-		put = new hbase.Put tRow
-		put.add tCf, tCol, b
-		client.put testTable, put, (err, res) ->
-			assert.equal err, null
-			assert.equal res.processed, yes
+		tests = [
+			(cb) ->
+				put = new hbase.Put tRow
+				put.add tCf, tCol, b
+				client.put testTable, put, (err, res) ->
+					assert.equal err, null
+					assert.equal res.processed, yes
+					cb()
+		,
+			(cb) ->
+				increment = new hbase.Increment '1'
+				increment.add tCf, tCol, inc
 
-			increment = new hbase.Increment '1'
-			increment.add tCf, tCol, inc
-
-			client.increment testTable, increment, (err, res) ->
-				assert.equal err, null
-				val = res.result.cell[0].value.toBuffer()
-				assert.equal hbase.utils.bufferCompare(val, b), inc
-
+				client.increment testTable, increment, (err, res) ->
+					assert.equal err, null
+					val = res.result.cell[0].value.toBuffer()
+					assert.equal hbase.utils.bufferCompare(val, b), inc
+					cb()
+		,
+			(cb) ->
 				client.incrementColumnValue testTable, tRow, tCf, tCol, inc, (err, res) ->
 					assert.equal err, null
 					val = res.result.cell[0].value.toBuffer()
 					assert.equal hbase.utils.bufferCompare(val, b), inc * 2
+					cb()
+		,
+			(cb) ->
+				del = new hbase.Delete '1'
+				client.delete testTable, del, (err, res) ->
+					assert.equal err, null
+					assert.equal res.processed, yes
+					cb()
+		]
 
-					del = new hbase.Delete '1'
-					client.delete testTable, del, (err, res) ->
-						assert.equal err, null
-						assert.equal res.processed, yes
-						done()
+		async.waterfall tests, () ->
+			done()
 
 
 

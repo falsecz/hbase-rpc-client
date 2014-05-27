@@ -41,10 +41,13 @@ module.exports = class Delete
 			mutateType: "DELETE"
 			columnValue: []
 
-		for cf, qualifierValue of @familyMap
-			o.columnValue.push
+		for cf, qualifiers of @familyMap
+			column =
 				family: cf
-				qualifierValue: qualifierValue
+				qualifierValue: qualifiers.map (qualifier) ->
+					qualifier
+
+			o.columnValue.push column
 
 		o
 
