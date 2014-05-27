@@ -8,4 +8,4 @@ before_script:
   - "wget http://www.eu.apache.org/dist/hbase/hbase-0.98.2/$HBASE_FILE-bin.tar.gz"
   - "tar -xzf $HBASE_FILE-bin.tar.gz"
   - "$HBASE_FILE/bin/start-hbase.sh"
-  - "$HBASE_FILE/bin/hbase org.apache.hadoop.hbase.util.RegionSplitter mrdka HexStringSplit -c 10 -f cf1"
+  - "$HBASE_FILE/bin/hbase org.apache.hadoop.hbase.util.RegionSplitter node-hbase-test-table HexStringSplit -c 10 -f cf1"

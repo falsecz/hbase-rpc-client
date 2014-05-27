@@ -1,11 +1,10 @@
 assert = require 'assert'
 async = require 'async'
 ByteBuffer = require '../node_modules/protobufjs/node_modules/bytebuffer'
+config = require './test_config'
 
 blanket = (require 'blanket')()
 
-# create pre-splitted table
-# hbase org.apache.hadoop.hbase.util.RegionSplitter mrdka HexStringSplit -c 10 -f cf1
 
 
 describe 'hbase', () ->
@@ -16,13 +15,15 @@ describe 'hbase', () ->
 		if runningTestCoverage
 			require('require-dir')("#{__dirname}/../lib", {recurse: true, duplicates: true})
 
-	@_timeout = 10000
+	@_timeout = config.timeout
 
 	tCf = 'cf1'
 	tRow = '1'
 	tCol = 'col'
 
-	testTable = 'mrdka'
+	# create pre-splitted table
+	# hbase org.apache.hadoop.hbase.util.RegionSplitter node-hbase-test-table HexStringSplit -c 10 -f cf1
+	testTable = config.testTable
 	testRows = [
 			row: '111111'
 			cf: tCf
@@ -48,9 +49,8 @@ describe 'hbase', () ->
 	hbase = require '../index.coffee'
 
 	client = hbase
-		zookeeperHosts: ['192.168.57.101']
-		zookeeperHosts: ['localhost']
-		#zookeeperRoot: '/hbase'
+		zookeeperHosts: config.zookeeperHosts
+		zookeeperRoot: config.zookeeperRoot
 
 	it 'should put single row', (done) ->
 		put = new hbase.Put testRows[0].row
