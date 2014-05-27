@@ -417,7 +417,8 @@ describe 'hbase', () ->
 
 		tests = [
 			(cb) ->
-				putRow tRow, tCf, tCol, b, cb
+				putRow tRow, tCf, tCol, b, () ->
+					cb()
 		,
 			(cb) ->
 				increment = new hbase.Increment tRow
