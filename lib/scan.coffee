@@ -24,9 +24,7 @@ module.exports.getFilter = getFilter = (filter) ->
 	filterName = Object.keys(filter)[0]
 	filterNameUpper = "#{filterName[0].toUpperCase()}#{filterName[1..]}"
 
-	unless proto[filterNameUpper]
-		console.log "Invalid filter #{filterNameUpper}"
-		return false
+	throw new Error "Invalid filter #{filterNameUpper}" unless proto[filterNameUpper]
 
 	if filterNameUpper in ['SingleColumnValueFilter']
 		filter[filterName].comparator = getFilter filter[filterName].comparator
@@ -153,6 +151,8 @@ module.exports.Scan = class Scan
 
 
 	closeScan: (server, location, scannerId) ->
+		return unless location
+
 		req =
 			region:
 				type: "REGION_NAME"
