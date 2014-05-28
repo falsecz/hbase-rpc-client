@@ -11,7 +11,6 @@ describe 'hbase', () ->
 	before ->
 		matchesBlanket = (path) -> path.match /node_modules\/blanket/
 		runningTestCoverage = Object.keys(require.cache).filter(matchesBlanket).length > 0
-		console.log 'xxxx', runningTestCoverage
 		if runningTestCoverage
 			require('require-dir')("#{__dirname}/../lib", {recurse: true, duplicates: true})
 
