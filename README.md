@@ -2,6 +2,7 @@ node-hbase
 ==========
 [![Build Status](https://travis-ci.org/falsecz/node-hbase.svg?branch=master)](https://travis-ci.org/falsecz/node-hbase)
 [![Dependency Status](https://david-dm.org/falsecz/node-hbase.svg)](https://david-dm.org/falsecz/node-hbase)
+[![License](https://img.shields.io/badge/license-Apache_2-red.svg)](https://github.com/falsecz/node-hbase/blob/master/LICENSE.txt)
 
 CoffeeScript HBase Implementation with protobuf support based on https://github.com/alibaba/node-hbase-client/
 
