@@ -22,8 +22,12 @@ describe 'hbase', () ->
 	tCol = 'col'
 	tVal = 'val'
 
-	# create pre-splitted table
+
+	# create pre-splitted table with versions
 	# hbase org.apache.hadoop.hbase.util.RegionSplitter node-hbase-test-table HexStringSplit -c 10 -f cf1
+	# echo "alter 'node-hbase-test-table', {NAME=>'cf1', VERSIONS => 5}" | hbase shell
+
+
 	testTable = config.testTable
 	testRows = [
 			row: '111111'
@@ -78,14 +82,16 @@ describe 'hbase', () ->
 		client.get testTable, get, (err, res) ->
 			assert.equal err, null
 			assert.equal res.row, row
-			assert.equal res.columns[0].family, cf
-			assert.equal res.columns[0].qualifier, col
+			assert.equal res.columns[0].family.toString(), cf
+			assert.equal res.columns[0].qualifier.toString(), col
 			assert.equal res.columns[0].timestamp.toString(), ts.toString() if ts
+
 			if typeof val is 'object'
 				assert.equal res.columns[0].value.toString(), val.toString()
 			else
 				assert.equal res.columns[0].value, val
-			cb res
+
+			cb null, res
 
 	deleteRow = (row, cb) ->
 		del = new hbase.Delete row
@@ -93,6 +99,7 @@ describe 'hbase', () ->
 		client.delete testTable, del, (err, res) ->
 			assert.equal err, null
 			assert.equal res.processed, yes
+
 			rowDoesNotExist row, cb
 
 	rowDoesNotExist = (row, cb) ->
@@ -104,38 +111,47 @@ describe 'hbase', () ->
 			cb()
 
 	it 'should put single row', (done) ->
-		putRow testRows[0].row, testRows[0].cf, testRows[0].col, testRows[0].val, () ->
-			done()
+		putRow testRows[0].row, testRows[0].cf, testRows[0].col, testRows[0].val, done
 
 	it 'should get single row', (done) ->
-		getRow testRows[0].row, testRows[0].cf, testRows[0].col, testRows[0].val, () ->
+		getRow testRows[0].row, testRows[0].cf, testRows[0].col, testRows[0].val, done
+
+	it 'should get single row with invalid maxVersions', (done) ->
+		get = new hbase.Get testRows[0].row
+		get.setMaxVersions 0
+
+		client.get testTable, get, (err, res) ->
+			assert.equal err, null
+			assert.equal res.row, testRows[0].row
 			done()
 
 	it 'should delete row', (done) ->
 		deleteRow testRows[0].row, done
 
-	it 'should deleteColumn & deleteColumns', (done) ->
+	it 'should get multiple versions', (done) ->
 		tests = [
 			(cb) ->
-				putRow tRow, tCf, tCol, tVal, cb
-		,
-			(cb) ->
-				putRow tRow, tCf, tCol, tVal + '1', cb
-		,
-			(cb) ->
-				putRow tRow, tCf, tCol, tVal + '2', cb
-		,
-			(cb) ->
-				del = new hbase.Delete tRow
-				del.deleteColumn tCf, tCol
-
-				client.delete testTable, del, (err, res) ->
-					assert.equal err, null
-					assert.equal res.processed, yes
+				putRow tRow, tCf, tCol, tVal, () ->
 					cb()
 		,
 			(cb) ->
-				getRow tRow, tCf, tCol, tVal + '1', cb
+				putRow tRow, tCf, tCol, tVal + '1', () ->
+					cb()
+		,
+			(cb) ->
+				putRow tRow, tCf, tCol, tVal + '2', () ->
+					cb()
+		,
+			(cb) ->
+				get = new hbase.Get tRow
+				get.setMaxVersions 3
+
+				client.get testTable, get, (err, row) ->
+					assert.equal err, null
+					assert.equal row.cols["#{tCf}:#{tCol}"][0].value.toString(), tVal + '2'
+					assert.equal row.cols["#{tCf}:#{tCol}"][1].value.toString(), tVal + '1'
+					assert.equal row.cols["#{tCf}:#{tCol}"][2].value.toString(), tVal
+					cb()
 		,
 			(cb) ->
 				del = new hbase.Delete tRow
@@ -150,14 +166,88 @@ describe 'hbase', () ->
 				rowDoesNotExist tRow, cb
 		]
 
-		async.waterfall tests, () ->
-			done()
+		async.waterfall tests, done
+
+	it 'should get with timeRange', (done) ->
+		ts = null
+		tests = [
+			(cb) ->
+				putRow tRow, tCf, tCol, tVal, (err, row) ->
+					ts = row.cols["#{tCf}:#{tCol}"].timestamp
+					cb()
+		,
+			(cb) ->
+				putRow tRow, tCf, tCol, tVal + '1', () ->
+					cb()
+		,
+			(cb) ->
+				ts1 = ts
+				ts1--
+				ts2 = ts
+				ts2++
+
+				get = new hbase.Get tRow
+				get.setTimeRange ts1, ts2
+
+				client.get testTable, get, (err, row) ->
+					assert.equal err, null
+					assert.equal row.row, tRow
+					assert.equal row.cols["#{tCf}:#{tCol}"].value, tVal
+					cb()
+		,
+			(cb) ->
+				deleteRow tRow, cb
+		]
+
+		async.waterfall tests, done
+
+	it 'should deleteColumn & deleteColumns', (done) ->
+		tests = [
+			(cb) ->
+				putRow tRow, tCf, tCol, tVal, () ->
+					cb()
+		,
+			(cb) ->
+				putRow tRow, tCf, tCol, tVal + '1', () ->
+					cb()
+		,
+			(cb) ->
+				putRow tRow, tCf, tCol, tVal + '2', () ->
+					cb()
+		,
+			(cb) ->
+				del = new hbase.Delete tRow
+				del.deleteColumn tCf, tCol
+
+				client.delete testTable, del, (err, res) ->
+					assert.equal err, null
+					assert.equal res.processed, yes
+					cb()
+		,
+			(cb) ->
+				getRow tRow, tCf, tCol, tVal + '1', () ->
+					cb()
+		,
+			(cb) ->
+				del = new hbase.Delete tRow
+				del.deleteColumns tCf, tCol
+
+				client.delete testTable, del, (err, res) ->
+					assert.equal err, null
+					assert.equal res.processed, yes
+					cb()
+		,
+			(cb) ->
+				rowDoesNotExist tRow, cb
+		]
+
+		async.waterfall tests, done
 
 	it 'should deleteFamily & deleteFamilies', (done) ->
 		ts = null
 		tests = [
 			(cb) ->
-				putRow tRow, tCf, tCol, tVal, (row) ->
+				putRow tRow, tCf, tCol, tVal, (err, row) ->
 					ts = row.cols["#{tCf}:#{tCol}"].timestamp
 					cb()
 		,
@@ -195,8 +285,7 @@ describe 'hbase', () ->
 				rowDoesNotExist tRow, cb
 		]
 
-		async.waterfall tests, () ->
-			done()
+		async.waterfall tests, done
 
 	it 'should put multiple rows via array of Put objects', (done) ->
 		puts = testRows.map (row) ->
@@ -268,8 +357,21 @@ describe 'hbase', () ->
 					assert.equal err, null
 					assert.equal row.row, testRows[i].row
 					cb()
-		, () ->
-			done()
+		, done
+
+	it 'should stop scanning after closing the scanner', (done) ->
+		scan = client.getScanner testTable
+
+		scan.next (err, row) ->
+			assert.equal err, null
+			assert.equal row.row, testRows[0].row
+
+			scan.close()
+			scan.close()
+			scan.next (err, row) ->
+				assert.equal err, null
+				assert.equal Object.keys(row), 0
+				done()
 
 	it 'should scan the table with startRow and stopRow', (done) ->
 		scan = client.getScanner testTable, '5', '6'
@@ -282,6 +384,15 @@ describe 'hbase', () ->
 				assert.equal err, null
 				assert.equal Object.keys(row), 0
 				done()
+
+	it 'should report invalid filter for scan', (done) ->
+		scan = client.getScanner testTable
+		try
+			scan.setFilter nonexistingFilter: yes
+			done 'Did not detect invalid filter'
+		catch e
+			assert.equal e.message, 'Invalid filter NonexistingFilter'
+			done()
 
 	it 'should scan the table with filter', (done) ->
 		scan = client.getScanner testTable
@@ -299,8 +410,7 @@ describe 'hbase', () ->
 
 	it 'should scan the table with filterList', (done) ->
 		scan = client.getScanner testTable
-		fl = new hbase.FilterList
-		fl.addFilter columnPrefixFilter: prefix: testRows[2].col
+		fl = new hbase.FilterList 'MUST_PASS_ONE', columnPrefixFilter: prefix: testRows[2].col
 		scan.setFilter fl
 
 		scan.next (err, row) ->
@@ -422,6 +532,7 @@ describe 'hbase', () ->
 		,
 			(cb) ->
 				increment = new hbase.Increment tRow
+				assert.equal increment.getRow(), tRow
 				increment.add tCf, tCol, inc
 
 				client.increment testTable, increment, (err, res) ->
@@ -441,8 +552,7 @@ describe 'hbase', () ->
 				deleteRow tRow, cb
 		]
 
-		async.waterfall tests, () ->
-			done()
+		async.waterfall tests, done
 
 
 
