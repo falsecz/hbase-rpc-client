@@ -7,7 +7,12 @@ module.exports = class FilterList
 		@operator = 'MUST_PASS_ALL' unless @operator in ['MUST_PASS_ALL', 'MUST_PASS_ONE']
 
 		@filters = []
-		@filters.push filter if filter
+
+		if filter
+			filter = getFilter filter
+			return no unless filter
+
+			@filters.push filter
 
 
 	addFilter: (filter) =>
