@@ -33,6 +33,7 @@ module.exports = class Get
 			row: @row
 			timeRange: @tr
 			column: []
+			maxVersions: @maxVersions
 
 		for cf, qualifiers of @familyMap
 			o.column =
