@@ -234,9 +234,16 @@ module.exports = class Client extends EventEmitter
 			v = cell.value.toBuffer()
 			t = cell.timestamp
 
-			cols["#{f}:#{q}"] =
+			o =
 				value: v
 				timestamp: t
+
+			# multiple versions
+			if cols["#{f}:#{q}"]
+				cols["#{f}:#{q}"] = [cols["#{f}:#{q}"]] unless Array.isArray cols["#{f}:#{q}"]
+				cols["#{f}:#{q}"].push o
+			else
+				cols["#{f}:#{q}"] = o
 
 			family: f
 			qualifier: q
