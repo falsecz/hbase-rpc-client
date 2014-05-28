@@ -3,10 +3,15 @@ node-hbase
 [![Build Status](https://travis-ci.org/falsecz/node-hbase.svg?branch=master)](https://travis-ci.org/falsecz/node-hbase)
 [![Dependency Status](https://david-dm.org/falsecz/node-hbase.svg)](https://david-dm.org/falsecz/node-hbase)
 
-WIP! CoffeeScript HBase Implementation with protobuf support based on https://github.com/alibaba/node-hbase-client/
+CoffeeScript HBase Implementation with protobuf support based on https://github.com/alibaba/node-hbase-client/
 
 
-Features:
+### Supported HBase versions
+* [x] 0.96.x
+* [x] 0.98.x
+
+
+### Features
 * [x] get
 * [x] put
 * [x] delete
