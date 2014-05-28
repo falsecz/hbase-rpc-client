@@ -13,4 +13,4 @@ before_script:
   - "tar -xzf $HBASE_FILE-bin.tar.gz"
   - "$HBASE_FILE/bin/start-hbase.sh"
   - "$HBASE_FILE/bin/hbase org.apache.hadoop.hbase.util.RegionSplitter node-hbase-test-table HexStringSplit -c 10 -f cf1"
-  - "echo \"alter 'node-hbase-test-table', {NAME=>'cf1', VERSIONS => 5}\" | $HBASE_FILE/bin/hbase shell"
+  - "echo ""alter 'node-hbase-test-table', {NAME=>'cf1', VERSIONS => 5}"" | $HBASE_FILE/bin/hbase shell"
