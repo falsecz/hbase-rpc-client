@@ -1,11 +1,15 @@
 language: node_js
 
+env:
+  - HBASE_VERSION=0.98.2
+  - HBASE_VERSION=0.96.2
+
 node_js:
   - "0.10"
 
 before_script:
-  - "export HBASE_FILE=hbase-0.98.2-hadoop2"
-  - "wget http://www.eu.apache.org/dist/hbase/hbase-0.98.2/$HBASE_FILE-bin.tar.gz"
+  - "export HBASE_FILE=hbase-$HBASE_VERSION-hadoop2"
+  - "wget http://www.eu.apache.org/dist/hbase/hbase-$HBASE_VERSION/$HBASE_FILE-bin.tar.gz"
   - "tar -xzf $HBASE_FILE-bin.tar.gz"
   - "$HBASE_FILE/bin/start-hbase.sh"
   - "$HBASE_FILE/bin/hbase org.apache.hadoop.hbase.util.RegionSplitter node-hbase-test-table HexStringSplit -c 10 -f cf1"
