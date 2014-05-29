@@ -1,4 +1,4 @@
-assert = require 'assert'
+{assert} = require 'chai'
 async = require 'async'
 ByteBuffer = require '../node_modules/protobufjs/node_modules/bytebuffer'
 config = require './test_config'
@@ -67,7 +67,7 @@ describe 'hbase', () ->
 		put.add cf, col, val, ts
 
 		client.put testTable, put, (err, res) ->
-			assert.equal err, null, "put returned an error: #{err}"
+			assert.notOk err, "put returned an error: #{err}"
 			assert.equal res.processed, yes, "put wasn't processed"
 			getRow row, cf, col, val, ts, cb
 
@@ -80,7 +80,7 @@ describe 'hbase', () ->
 		get.addColumn cf, col
 
 		client.get testTable, get, (err, res) ->
-			assert.equal err, null, "get returned an error: #{err}"
+			assert.notOk err, "get returned an error: #{err}"
 			assert.equal res.row, row, "rowKey doesn't match"
 			assert.equal res.columns[0].family.toString(), cf, "columnFamily doesn't match"
 			assert.equal res.columns[0].qualifier.toString(), col, "qualifier doesn't match"
@@ -97,7 +97,7 @@ describe 'hbase', () ->
 		del = new hbase.Delete row
 
 		client.delete testTable, del, (err, res) ->
-			assert.equal err, null, "delete returned an error: #{err}"
+			assert.notOk err, "delete returned an error: #{err}"
 			assert.equal res.processed, yes, "delete wasn't processed"
 
 			rowDoesNotExist row, cb
@@ -106,8 +106,8 @@ describe 'hbase', () ->
 		get = new hbase.Get row
 
 		client.get testTable, get, (err, res) ->
-			assert.equal err, null, "get returned an error: #{err}"
-			assert.equal res, null, "row #{row} exists"
+			assert.notOk err, "get returned an error: #{err}"
+			assert.notOk res, "row #{row} exists"
 			cb()
 
 	describe 'put & mput', () ->
@@ -129,7 +129,7 @@ describe 'hbase', () ->
 				o
 
 			client.mput testTable, puts, (err, res) ->
-				assert.equal err, null, "mput returned an error: #{err}"
+				assert.notOk err, "mput returned an error: #{err}"
 				done()
 
 		it 'should put multiple rows via array of Put objects', (done) ->
@@ -139,7 +139,7 @@ describe 'hbase', () ->
 				put
 
 			client.mput testTable, puts, (err, res) ->
-				assert.equal err, null, "mput returned an error: #{err}"
+				assert.notOk err, "mput returned an error: #{err}"
 				done()
 
 		it 'should checkAndPut', (done) ->
@@ -148,7 +148,7 @@ describe 'hbase', () ->
 				put.add tCf, tCol, randomValue
 
 				client.checkAndPut testTable, tRow, tCf, tCol, tVal, put, (err, res) ->
-					assert.equal err, null, "checkAndPut returned an error: #{err}"
+					assert.notOk err, "checkAndPut returned an error: #{err}"
 					assert.equal res.processed, yes, "checkAndPut wasn't processed"
 					getRow tRow, tCf, tCol, randomValue, done
 
@@ -175,7 +175,7 @@ describe 'hbase', () ->
 			get.setMaxVersions 0
 
 			client.get testTable, get, (err, res) ->
-				assert.equal err, null, "get returned an error: #{err}"
+				assert.notOk err, "get returned an error: #{err}"
 				assert.equal res.row, tRow, "rowKey doesn't match"
 				done()
 
@@ -184,7 +184,7 @@ describe 'hbase', () ->
 				row.row
 
 			client.mget testTable, gets, (err, res) ->
-				assert.equal err, null, "mget returned an error: #{err}"
+				assert.notOk err, "mget returned an error: #{err}"
 				assert.equal res.length, testRows.length, "mget didn't return expected number of rows"
 				done()
 
@@ -193,7 +193,7 @@ describe 'hbase', () ->
 				new hbase.Get row.row
 
 			client.mget testTable, gets, (err, res) ->
-				assert.equal err, null, "mget returned an error: #{err}"
+				assert.notOk err, "mget returned an error: #{err}"
 				assert.equal res.length, testRows.length, "mget didn't return expected number of rows"
 				done()
 
@@ -210,7 +210,7 @@ describe 'hbase', () ->
 					get.setMaxVersions 3
 
 					client.get testTable, get, (err, row) ->
-						assert.equal err, null, "get returned an error: #{err}"
+						assert.notOk err, "get returned an error: #{err}"
 						assert.equal row.cols["#{tCf}:#{tCol}"][0].value.toString(), tVal + '2', "latest version value doesn't match"
 						assert.equal row.cols["#{tCf}:#{tCol}"][1].value.toString(), tVal + '1', "2nd latest version value doesn't match"
 						assert.equal row.cols["#{tCf}:#{tCol}"][2].value.toString(), tVal, "oldest version value doesn't match"
@@ -220,7 +220,7 @@ describe 'hbase', () ->
 					del.deleteColumns tCf, tCol
 
 					client.delete testTable, del, (err, res) ->
-						assert.equal err, null, "delete returned an error: #{err}"
+						assert.notOk err, "delete returned an error: #{err}"
 						assert.equal res.processed, yes, "delete wasn't processed"
 						cb()
 				(cb) ->
@@ -247,7 +247,7 @@ describe 'hbase', () ->
 					get.setTimeRange ts1, ts2
 
 					client.get testTable, get, (err, row) ->
-						assert.equal err, null, "get returned an error: #{err}"
+						assert.notOk err, "get returned an error: #{err}"
 						assert.equal row.row, tRow, "rowKey doesn't match"
 						assert.equal row.cols["#{tCf}:#{tCol}"].value, tVal, "value doesn't match"
 						cb()
@@ -280,14 +280,14 @@ describe 'hbase', () ->
 				del = new hbase.Delete tRow
 
 				client.checkAndDelete testTable, tRow, tCf, tCol, randomValue, del, (err, res) ->
-					assert.equal err, null, "checkAndDelete returned an error: #{err}"
+					assert.notOk err, "checkAndDelete returned an error: #{err}"
 					assert.equal res.processed, yes, "checkAndDelete wasn't processed"
 
 					get = new hbase.Get tRow
 
 					client.get testTable, get, (err, res) ->
-						assert.equal err, null, "get returned an error: #{err}"
-						assert.equal res, null, "row #{tRow} exists"
+						assert.notOk err, "get returned an error: #{err}"
+						assert.notOk res, "row #{tRow} exists"
 						done()
 
 		it 'should deleteColumn & deleteColumns', (done) ->
@@ -303,7 +303,7 @@ describe 'hbase', () ->
 					del.deleteColumn tCf, tCol
 
 					client.delete testTable, del, (err, res) ->
-						assert.equal err, null, "delete returned an error: #{err}"
+						assert.notOk err, "delete returned an error: #{err}"
 						assert.equal res.processed, yes, "delete wasn't processed"
 						cb()
 				(cb) ->
@@ -313,7 +313,7 @@ describe 'hbase', () ->
 					del.deleteColumns tCf, tCol
 
 					client.delete testTable, del, (err, res) ->
-						assert.equal err, null, "delete returned an error: #{err}"
+						assert.notOk err, "delete returned an error: #{err}"
 						assert.equal res.processed, yes, "delete wasn't processed"
 						cb()
 				(cb) ->
@@ -338,7 +338,7 @@ describe 'hbase', () ->
 					del.deleteFamilyVersion tCf, ts
 
 					client.delete testTable, del, (err, res) ->
-						assert.equal err, null, "delete returned an error: #{err}"
+						assert.notOk err, "delete returned an error: #{err}"
 						assert.equal res.processed, yes, "delete wasn't processed"
 						cb()
 				(cb) ->
@@ -348,7 +348,7 @@ describe 'hbase', () ->
 					del.deleteFamily tCf
 
 					client.delete testTable, del, (err, res) ->
-						assert.equal err, null, "delete returned an error: #{err}"
+						assert.notOk err, "delete returned an error: #{err}"
 						assert.equal res.processed, yes, "delete wasn't processed"
 						cb()
 				(cb) ->
@@ -362,11 +362,11 @@ describe 'hbase', () ->
 				row.row
 
 			client.mdelete testTable, rows, (err, res) ->
-				assert.equal err, null, "mdelete returned an error: #{err}"
+				assert.notOk err, "mdelete returned an error: #{err}"
 				assert.equal res.length, 0, "mdelete should return empty row"
 
 				client.mget testTable, rows, (err, res) ->
-					assert.equal err, null, "mget returned an error: #{err}"
+					assert.notOk err, "mget returned an error: #{err}"
 					assert.equal res.length, 0, "not all rows were deleted"
 					done()
 
@@ -378,11 +378,11 @@ describe 'hbase', () ->
 				new hbase.Delete row.row
 
 			client.mdelete testTable, dels, (err, res) ->
-				assert.equal err, null, "mdelete returned an error: #{err}"
+				assert.notOk err, "mdelete returned an error: #{err}"
 				assert.equal res.length, 0, "mdelete should return empty row"
 
 				client.mget testTable, rows, (err, res) ->
-					assert.equal err, null, "mget returned an error: #{err}"
+					assert.notOk err, "mget returned an error: #{err}"
 					assert.equal res.length, 0, "not all rows were deleted"
 					done()
 
@@ -407,12 +407,12 @@ describe 'hbase', () ->
 			async.eachSeries [0..testRows.length], (i, cb) ->
 				if i is testRows.length
 					scan.next (err, row) ->
-						assert.equal err, null, "scan.next returned an error: #{err}"
+						assert.notOk err, "scan.next returned an error: #{err}"
 						assert.equal Object.keys(row), 0, "last scan should return empty object"
 						cb()
 				else
 					scan.next (err, row) ->
-						assert.equal err, null, "scan.next returned an error: #{err}"
+						assert.notOk err, "scan.next returned an error: #{err}"
 						assert.equal row.row, testRows[i].row, "rowKey doesn't match"
 						cb()
 			, done
@@ -421,13 +421,13 @@ describe 'hbase', () ->
 			scan = client.getScanner testTable
 
 			scan.next (err, row) ->
-				assert.equal err, null, "scan.next returned an error: #{err}"
+				assert.notOk err, "scan.next returned an error: #{err}"
 				assert.equal row.row, tRow, "rowKey doesn't match"
 
 				scan.close()
 				scan.close()
 				scan.next (err, row) ->
-					assert.equal err, null, "scan.next returned an error: #{err}"
+					assert.notOk err, "scan.next returned an error: #{err}"
 					assert.equal Object.keys(row), 0, "closed scanner should return empty object"
 					done()
 
@@ -435,11 +435,11 @@ describe 'hbase', () ->
 			scan = client.getScanner testTable, '5', '6'
 
 			scan.next (err, row) ->
-				assert.equal err, null, "scan.next returned an error: #{err}"
+				assert.notOk err, "scan.next returned an error: #{err}"
 				assert.equal row.row, testRows[1].row, "rowKey doesn't match"
 
 				scan.next (err, row) ->
-					assert.equal err, null, "scan.next returned an error: #{err}"
+					assert.notOk err, "scan.next returned an error: #{err}"
 					assert.equal Object.keys(row), 0, "should return empty object"
 					done()
 
@@ -457,12 +457,12 @@ describe 'hbase', () ->
 			scan.setFilter columnPrefixFilter: prefix: testRows[2].col
 
 			scan.next (err, row) ->
-				assert.equal err, null, "scan.next returned an error: #{err}"
+				assert.notOk err, "scan.next returned an error: #{err}"
 				assert.equal row.row, testRows[2].row ,"rowKey doesn't match"
 				assert.equal row.cols["#{testRows[2].cf}:#{testRows[2].col}"].value, testRows[2].val, "value doesn't match"
 
 				scan.next (err, row) ->
-					assert.equal err, null, "scan.next returned an error: #{err}"
+					assert.notOk err, "scan.next returned an error: #{err}"
 					assert.equal Object.keys(row), 0, "scan.next should return empty object"
 					done()
 
@@ -472,12 +472,12 @@ describe 'hbase', () ->
 			scan.setFilter fl
 
 			scan.next (err, row) ->
-				assert.equal err, null, "scan.next returned an error: #{err}"
+				assert.notOk err, "scan.next returned an error: #{err}"
 				assert.equal row.row, testRows[2].row, "rowKey doesn't match"
 				assert.equal row.cols["#{testRows[2].cf}:#{testRows[2].col}"].value, testRows[2].val, "value doesn't match"
 
 				scan.next (err, row) ->
-					assert.equal err, null, "scan.next returned an error: #{err}"
+					assert.notOk err, "scan.next returned an error: #{err}"
 					assert.equal Object.keys(row), 0, "scan.next should return empty object"
 					done()
 
@@ -485,7 +485,7 @@ describe 'hbase', () ->
 			scan = client.getScanner testTable
 
 			scan.toArray (err, res) ->
-				assert.equal err, null, "scan.toArray returned an error: #{err}"
+				assert.notOk err, "scan.toArray returned an error: #{err}"
 
 				for i, row of testRows
 					assert.equal res[i].row, testRows[i].row, "rowKey doesn't match"
@@ -531,7 +531,7 @@ describe 'hbase', () ->
 			scan.setFilter fl3
 
 			scan.toArray (err, res) ->
-				assert.equal err, null, "scan.toArray returned an error: #{err}"
+				assert.notOk err, "scan.toArray returned an error: #{err}"
 
 				assert.equal res[0].row, testRows[1].row, "rowKey doesn't match"
 				assert.equal res[0].cols["#{testRows[1].cf}:#{testRows[1].col}"].value, testRows[1].val, "value doesn't match"
@@ -556,13 +556,13 @@ describe 'hbase', () ->
 					increment.add tCf, tCol, inc
 
 					client.increment testTable, increment, (err, res) ->
-						assert.equal err, null, "increment returned an error: #{err}"
+						assert.notOk err, "increment returned an error: #{err}"
 						val = res.result.cell[0].value.toBuffer()
 						assert.equal hbase.utils.bufferCompare(val, b), inc, "value wasn't incremented"
 						cb()
 				(cb) ->
 					client.incrementColumnValue testTable, tRow, tCf, tCol, inc, (err, res) ->
-						assert.equal err, null, "incrementColumnValue returned an error: #{err}"
+						assert.notOk err, "incrementColumnValue returned an error: #{err}"
 						val = res.result.cell[0].value.toBuffer()
 						assert.equal hbase.utils.bufferCompare(val, b), inc * 2, "value wasn't incremented"
 						cb()
