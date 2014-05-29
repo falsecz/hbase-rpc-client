@@ -8,11 +8,17 @@ blanket = (require 'blanket')()
 
 
 describe 'hbase', () ->
-	before () ->
-		matchesBlanket = (path) -> path.match /node_modules\/blanket/
-		runningTestCoverage = Object.keys(require.cache).filter(matchesBlanket).length > 0
-		if runningTestCoverage
-			require('require-dir')("#{__dirname}/../lib", {recurse: true, duplicates: true})
+	before (done) ->
+		rows = testRows.map (row) ->
+			row.row
+
+		client.mdelete testTable, rows, () ->
+			matchesBlanket = (path) -> path.match /node_modules\/blanket/
+			runningTestCoverage = Object.keys(require.cache).filter(matchesBlanket).length > 0
+			if runningTestCoverage
+				require('require-dir')("#{__dirname}/../lib", {recurse: true, duplicates: true})
+
+			done()
 
 	@_timeout = config.timeout
 
@@ -111,11 +117,11 @@ describe 'hbase', () ->
 			cb()
 
 	describe 'put & mput', () ->
-		afterEach () ->
+		afterEach (done) ->
 			rows = testRows.map (row) ->
 				row.row
 
-			client.mdelete testTable, rows, () ->
+			client.mdelete testTable, rows, done
 
 		it 'should put single row', (done) ->
 			putRow tRow, tCf, tCol, tVal, done
@@ -153,19 +159,19 @@ describe 'hbase', () ->
 					getRow tRow, tCf, tCol, randomValue, done
 
 	describe 'get & mget', () ->
-		before () ->
+		before (done) ->
 			puts = testRows.map (row) ->
 				put = new hbase.Put row.row
 				put.add row.cf, row.col, row.val
 				put
 
-			client.mput testTable, puts, (err, res) ->
+			client.mput testTable, puts, done
 
-		after () ->
+		after (done) ->
 			rows = testRows.map (row) ->
 				row.row
 
-			client.mdelete testTable, rows, () ->
+			client.mdelete testTable, rows, done
 
 		it 'should get single row', (done) ->
 			getRow tRow, tCf, tCol, tVal, done
@@ -258,19 +264,19 @@ describe 'hbase', () ->
 			async.waterfall tests, done
 
 	describe 'delete & mdelete', () ->
-		beforeEach () ->
+		beforeEach (done) ->
 			puts = testRows.map (row) ->
 				put = new hbase.Put row.row
 				put.add row.cf, row.col, row.val
 				put
 
-			client.mput testTable, puts, (err, res) ->
+			client.mput testTable, puts, done
 
-		after () ->
+		after (done) ->
 			rows = testRows.map (row) ->
 				row.row
 
-			client.mdelete testTable, rows, () ->
+			client.mdelete testTable, rows, done
 
 		it 'should delete row', (done) ->
 			deleteRow testRows[1].row, done
@@ -387,19 +393,19 @@ describe 'hbase', () ->
 					done()
 
 	describe 'scanner', () ->
-		before () ->
+		before (done) ->
 			puts = testRows.map (row) ->
 				put = new hbase.Put row.row
 				put.add row.cf, row.col, row.val
 				put
 
-			client.mput testTable, puts, (err, res) ->
+			client.mput testTable, puts, done
 
-		after () ->
+		after (done) ->
 			rows = testRows.map (row) ->
 				row.row
 
-			client.mdelete testTable, rows, () ->
+			client.mdelete testTable, rows, done
 
 		it 'should scan the table', (done) ->
 			scan = client.getScanner testTable
