@@ -169,7 +169,7 @@ module.exports.Scan = class Scan
 		@closed = yes
 
 
-	each: (f) =>
+	each: (f, cb) =>
 		work = yes
 		async.whilst () ->
 			work
@@ -186,6 +186,7 @@ module.exports.Scan = class Scan
 				f null, row
 				process.nextTick done
 		, (err) ->
+			return cb err if cb
 			f err
 
 
