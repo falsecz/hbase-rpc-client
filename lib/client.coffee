@@ -567,16 +567,16 @@ module.exports = class Client extends EventEmitter
 		return cb() if @_prefetchRegionCacheList[table] or utils.bufferCompare(table, hconstants.META_TABLE_NAME) is 0
 		debug "prefetchRegionCache for table: #{table}"
 
-		prefetchEvent = "prefetch-#{table}"
-		return @_prefetchRegionCacheListInProgress[prefetchEvent].push cb if @_prefetchRegionCacheListInProgress[prefetchEvent]
+		event = "prefetch-#{table}"
+		return @_prefetchRegionCacheListInProgress[event].push cb if @_prefetchRegionCacheListInProgress[event]
 
-		@once prefetchEvent, () =>
+		@once event, () =>
 			loop
-				callback = @_prefetchRegionCacheListInProgress[prefetchEvent].pop()
+				callback = @_prefetchRegionCacheListInProgress[event].pop()
 				return unless callback
 				callback()
 
-		@_prefetchRegionCacheListInProgress[prefetchEvent] = []
+		@_prefetchRegionCacheListInProgress[event] = []
 		startRow = @createRegionName table, null, hconstants.ZEROS, no
 		stopRow = @createRegionName utils.bufferIncrement(table), null, hconstants.ZEROS, no
 
@@ -599,8 +599,8 @@ module.exports = class Client extends EventEmitter
 				done()
 		, (err) =>
 			console.log err if err
-			@emit prefetchEvent
-			delete @_prefetchRegionCacheListInProgress[prefetchEvent]
+			@emit event
+			delete @_prefetchRegionCacheListInProgress[event]
 			cb()
 
 
