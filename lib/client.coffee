@@ -45,8 +45,10 @@ module.exports = class Client extends EventEmitter
 		@rpcTimeout = 30000
 		@pingTimeout = 30000
 		@zkStart = "init"
+		@_zkStartListener = []
 		@rootRegionZKPath = options.rootRegionZKPath or '/meta-region-server'
-		@prefetchRegionCacheList = {}
+		@_prefetchRegionCacheList = {}
+		@_prefetchRegionCacheListInProgress = {}
 		@ensureZookeeperTrackers (err) =>
 			@emit 'error', err if err
 
@@ -91,9 +93,15 @@ module.exports = class Client extends EventEmitter
 
 	ensureZookeeperTrackers: (cb) =>
 		return cb() if @zkStart is "done"
-		@once "ready", cb
+		@_zkStartListener.push cb
 		return if @zkStart is "starting"
 		@zkStart = "starting"
+
+		@once 'ready', () ->
+			loop
+				callback = @_zkStartListener.pop()
+				return unless callback
+				callback()
 
 		@zk.once "connected", (err) =>
 			if err
@@ -556,9 +564,19 @@ module.exports = class Client extends EventEmitter
 
 
 	prefetchRegionCache: (table, cb) =>
-		return cb() if @prefetchRegionCacheList[table] or utils.bufferCompare(table, hconstants.META_TABLE_NAME) is 0
+		return cb() if @_prefetchRegionCacheList[table] or utils.bufferCompare(table, hconstants.META_TABLE_NAME) is 0
 		debug "prefetchRegionCache for table: #{table}"
 
+		prefetchEvent = "prefetch-#{table}"
+		return @_prefetchRegionCacheListInProgress[prefetchEvent].push cb if @_prefetchRegionCacheListInProgress[prefetchEvent]
+
+		@once prefetchEvent, () =>
+			loop
+				callback = @_prefetchRegionCacheListInProgress[prefetchEvent].pop()
+				return unless callback
+				callback()
+
+		@_prefetchRegionCacheListInProgress[prefetchEvent] = []
 		startRow = @createRegionName table, null, hconstants.ZEROS, no
 		stopRow = @createRegionName utils.bufferIncrement(table), null, hconstants.ZEROS, no
 
@@ -572,15 +590,17 @@ module.exports = class Client extends EventEmitter
 				return done err if err
 
 				unless regionRow.row
-					@prefetchRegionCacheList[table] = yes
+					@_prefetchRegionCacheList[table] = yes
 					work = no
 					return done()
 
 				region = @_parseRegionInfo regionRow
 				@cacheLocation table, region if region
 				done()
-		, (err) ->
+		, (err) =>
 			console.log err if err
+			@emit prefetchEvent
+			delete @_prefetchRegionCacheListInProgress[prefetchEvent]
 			cb()
 
 
@@ -665,6 +685,6 @@ module.exports = class Client extends EventEmitter
 			for regionName, region of regions
 				if region.server.toString() is serverName
 					delete @cachedRegionLocations[table]
-					@prefetchRegionCacheList[table] = no
+					@_prefetchRegionCacheList[table] = no
 
 
