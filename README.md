@@ -129,7 +129,7 @@ client.delete table, [rowKey1, rowKey2], (err, res) ->
 ##### `scanner = getScanner table, startRow, stopRow`
 ##### `scanner.setFilter filter`
 ##### `scanner.next callback`
-##### `scanner.each function, callback`
+##### `scanner.each function`
 ##### `scanner.toArray callback`
 ##### `scanner.close()`
 ```coffeescript
@@ -195,6 +195,19 @@ scan = client.getScanner table
 
 scan.toArray (err, res) ->
 	console.log arguments
+```
+```coffeescript
+scan = client.getScanner table
+
+scan.each (err, row) ->
+	console.log arguments
+```
+```coffeescript
+scan = client.getScanner table
+
+scan.each (err, row, done) ->
+	console.log arguments
+	done()
 ```
 
 ### checkAndPut

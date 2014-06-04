@@ -169,7 +169,7 @@ module.exports.Scan = class Scan
 		@closed = yes
 
 
-	each: (f, cb) =>
+	each: (f) =>
 		work = yes
 		async.whilst () ->
 			work
@@ -181,18 +181,20 @@ module.exports.Scan = class Scan
 					work = no
 					return process.nextTick done
 
-				f row
-				return process.nextTick done
+				return f null, row, done if f.length is 3
+
+				f null, row
+				process.nextTick done
 		, (err) ->
-			cb err
+			f err
 
 
 	toArray: (cb) =>
 		out = []
-		@each (row) ->
+		@each (err, row) ->
+			return cb err, out unless row
+
 			out.push row
-		, (err) ->
-			cb err, out
 
 
 
