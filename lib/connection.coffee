@@ -38,6 +38,7 @@ module.exports = class Connection extends EventEmitter
 		@_connected = no
 		@_socketError = null
 		@_callNums = 0
+		@_callTimeout = options.callTimeout
 		@setupIOStreams()
 
 
@@ -68,7 +69,7 @@ module.exports = class Connection extends EventEmitter
 				reqHeaderBuffer = reqHeader.toBuffer()
 
 				@out.writeDelimitedBuffers reqHeaderBuffer, req.toBuffer()
-				@calls[reqHeader.callId] = new Call reflect.resolvedResponseType.clazz, reqHeader, hconstants.CALL_TIMEOUT, done
+				@calls[reqHeader.callId] = new Call reflect.resolvedResponseType.clazz, reqHeader, @_callTimeout, done
 
 			@rpc = new ClientService impl
 

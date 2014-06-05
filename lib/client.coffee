@@ -42,8 +42,9 @@ module.exports = class Client extends EventEmitter
 
 		@servers = {}
 		@cachedRegionLocations = {}
-		@rpcTimeout = 30000
-		@pingTimeout = 30000
+		@rpcTimeout = options.rpcTimeout or hconstants.RPC_TIMEOUT
+		@pingTimeout = options.pingTimeout or hconstants.PING_TIMEOUT
+		@callTimeout = options.callTimeout or hconstants.CALL_TIMEOUT
 		@zkStart = "init"
 		@_zkStartListener = []
 		@rootRegionZKPath = options.rootRegionZKPath or '/meta-region-server'
@@ -623,12 +624,12 @@ module.exports = class Client extends EventEmitter
 			return
 
 		rDebug "getRegionConnection connecting to #{serverName}"
-		server = new Connection(
+		server = new Connection
 			host: hostname
 			port: port
 			rpcTimeout: @rpcTimeout
+			callTimeout: @callTimeout
 			logger: @logger
-		)
 		server.state = "connecting"
 
 		# cache server
