@@ -37,8 +37,12 @@ CoffeeScript HBase Implementation with protobuf support based on https://github.
 hbase = require "node-hbase"
 
 client = hbase
-	zookeeperHosts: ["localhost"]
+	zookeeperHosts: ["localhost"] # required
 	zookeeperRoot: "/hbase"
+	rootRegionZKPath: "/meta-region-server"
+	rpcTimeout: 30000
+	pingTimeout: 30000
+	callTimeout: 5000
 ```
 
 ### put
