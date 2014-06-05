@@ -98,10 +98,9 @@ module.exports = class Client extends EventEmitter
 		return if @zkStart is "starting"
 		@zkStart = "starting"
 
-		@once 'ready', () ->
-			loop
+		@once 'ready', () =>
+			while @_zkStartListener.length
 				callback = @_zkStartListener.pop()
-				return unless callback
 				callback()
 
 		@zk.once "connected", (err) =>
@@ -572,9 +571,8 @@ module.exports = class Client extends EventEmitter
 		return @_prefetchRegionCacheListInProgress[event].push cb if @_prefetchRegionCacheListInProgress[event]
 
 		@once event, () =>
-			loop
+			while @_prefetchRegionCacheListInProgress[event].length
 				callback = @_prefetchRegionCacheListInProgress[event].pop()
-				return unless callback
 				callback()
 
 		@_prefetchRegionCacheListInProgress[event] = []
