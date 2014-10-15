@@ -5,15 +5,12 @@ module.exports =
 		b = new Buffer buffer
 		i ?= b.length - 1
 
-		return Buffer.concat [new Buffer [1], b] if i < 0
+		return Buffer.concat [new Buffer([1]), b] if i < 0
 
-		tmp = new Buffer [parseInt b[i]]
-		tmp[0]++
-
-		newBuffer = @bufferIncrement(b, i - 1) if tmp[0] < b[i]
+		tmp = new Buffer [parseInt b[i]++]
+		newBuffer = @bufferIncrement(b, i - 1) if tmp[0] > b[i]
 		return newBuffer if newBuffer and b.length < newBuffer.length
 
-		b[i] = tmp[0]
 		b
 
 
