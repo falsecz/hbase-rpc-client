@@ -67,7 +67,7 @@ module.exports = class Client extends EventEmitter
 				if firstStart
 					# only first start fail will emit ready event
 					@zkStart = "error"
-					@emit "ready", err
+					@emit "error", err
 				return
 
 			@zkWatchTimeoutCount = 1
@@ -205,6 +205,7 @@ module.exports = class Client extends EventEmitter
 
 
 	getCachedLocation: (table, row) =>
+		rDebug "Trying to find cached regionLocation #{cachedRegion}"
 		return null unless @cachedRegionLocations[table] and Object.keys(@cachedRegionLocations[table]).length > 0
 		cachedRegions = Object.keys(@cachedRegionLocations[table])
 
@@ -216,6 +217,7 @@ module.exports = class Client extends EventEmitter
 				rDebug "Found cached regionLocation #{cachedRegion}"
 				return @cachedRegionLocations[table][cachedRegion]
 
+		rDebug "Didn't find cached regionLocation #{cachedRegion}"
 		null
 
 
@@ -611,6 +613,8 @@ module.exports = class Client extends EventEmitter
 		else
 			serverName = @getServerName hostname, port
 
+		rDebug 'getRegionConnection', serverName
+
 		server = @servers[serverName]
 		if server
 			if server.state is "ready"
@@ -665,6 +669,8 @@ module.exports = class Client extends EventEmitter
 
 		debug err if err
 
+		return unless @servers[serverName]
+
 		server = @servers[serverName]
 		delete @servers[serverName]
 
@@ -675,6 +681,7 @@ module.exports = class Client extends EventEmitter
 
 	_handleConnectionClose: (serverName) =>
 		rDebug "_handleConnectionClose server: #{serverName}"
+		@servers[serverName].removeAllListeners()
 		delete @servers[serverName]
 		@_clearCachedLocationForServer serverName
 
