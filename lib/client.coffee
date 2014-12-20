@@ -213,7 +213,7 @@ module.exports = class Client extends EventEmitter
 			startKey = @cachedRegionLocations[table][cachedRegion].startKey
 			endKey = @cachedRegionLocations[table][cachedRegion].endKey
 
-			if utils.bufferCompare(row, endKey) <= 0 and utils.bufferCompare(row, startKey) > 0
+			if (endKey.length is 0 or utils.bufferCompare(row, endKey) <= 0) and (startKey.length is 0 or utils.bufferCompare(row, startKey) > 0)
 				rDebug "Found cached regionLocation #{cachedRegion}"
 				return @cachedRegionLocations[table][cachedRegion]
 
