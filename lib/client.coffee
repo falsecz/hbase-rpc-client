@@ -205,7 +205,7 @@ module.exports = class Client extends EventEmitter
 
 
 	getCachedLocation: (table, row) =>
-		rDebug "Trying to find cached regionLocation #{cachedRegion}"
+		rDebug "Trying to find cached regionLocation for table #{table}"
 		return null unless @cachedRegionLocations[table] and Object.keys(@cachedRegionLocations[table]).length > 0
 		cachedRegions = Object.keys(@cachedRegionLocations[table])
 
@@ -217,7 +217,7 @@ module.exports = class Client extends EventEmitter
 				rDebug "Found cached regionLocation #{cachedRegion}"
 				return @cachedRegionLocations[table][cachedRegion]
 
-		rDebug "Didn't find cached regionLocation #{cachedRegion}"
+		rDebug "Didn't find cached regionLocation for table #{table}"
 		null
 
 
