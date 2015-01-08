@@ -82,6 +82,7 @@ module.exports = class Connection extends EventEmitter
 			debug "Invalid callId #{header.callId}"
 			return
 
+		delete @calls[header.callId]
 		return call.complete header.exception if header.exception
 
 		call.complete null, call.responseClass.decode messages[1]
@@ -116,6 +117,7 @@ module.exports = class Connection extends EventEmitter
 	_handleClose: () =>
 		@closed = yes
 		@emit 'close'
+		@socket.end()
 		debug "_handleClose #{JSON.stringify arguments}"
 
 

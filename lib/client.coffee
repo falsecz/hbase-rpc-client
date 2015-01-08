@@ -213,7 +213,7 @@ module.exports = class Client extends EventEmitter
 			startKey = @cachedRegionLocations[table][cachedRegion].startKey
 			endKey = @cachedRegionLocations[table][cachedRegion].endKey
 
-			if (endKey.length is 0 or utils.bufferCompare(row, endKey) <= 0) and (startKey.length is 0 or utils.bufferCompare(row, startKey) > 0)
+			if (endKey.length is 0 or utils.bufferCompare(row, endKey) < 0) and (startKey.length is 0 or utils.bufferCompare(row, startKey) >= 0)
 				rDebug "Found cached regionLocation #{cachedRegion}"
 				return @cachedRegionLocations[table][cachedRegion]
 
@@ -374,6 +374,10 @@ module.exports = class Client extends EventEmitter
 					return done err if err
 
 					for serverResult in res.regionActionResult
+						if serverResult.exception
+							result.push serverResult.exception
+							continue
+
 						for response in serverResult.resultOrException
 							o = @_parseResponse response.result
 							result.push o if o
@@ -460,9 +464,6 @@ module.exports = class Client extends EventEmitter
 
 
 	mput: (table, rows, opts, cb) =>
-		return cb "Input is expected to be a non-empty array" unless Array.isArray(rows) and rows.length > 0
-		debug "mput on table: #{table} #{rows.length} rows"
-
 		if typeof columns is 'function'
 			cb = columns
 			opts = {}
@@ -470,6 +471,9 @@ module.exports = class Client extends EventEmitter
 		else if typeof opts is 'function'
 			cb = opts
 			opts = {}
+
+		return cb "Input is expected to be a non-empty array" unless Array.isArray(rows) and rows.length > 0
+		debug "mput on table: #{table} #{rows.length} rows"
 
 		workingList = []
 		for row in rows
@@ -547,7 +551,7 @@ module.exports = class Client extends EventEmitter
 
 		actionsByServer = {}
 
-		workingList.filter (item) ->
+		workingList = workingList.filter (item) ->
 			item?
 
 		return cb null, [] if workingList.length is 0
@@ -676,7 +680,6 @@ module.exports = class Client extends EventEmitter
 
 		# avoid 'close' and 'connect' event emit
 		server.removeAllListeners()
-		server.close()
 
 
 	_handleConnectionClose: (serverName) =>

@@ -1,7 +1,7 @@
 language: node_js
 
 env:
-  - HBASE_VERSION=0.98.8
+  - HBASE_VERSION=0.98.9
 
 node_js:
   - "0.10"
