@@ -10,6 +10,7 @@ CoffeeScript HBase Implementation with protobuf support based on https://github.
 ### Supported HBase versions
 * [x] 0.96.x
 * [x] 0.98.x
+* [x] 1.0.x
 
 
 ### Features
