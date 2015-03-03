@@ -138,6 +138,18 @@ describe 'hbase', () ->
 				assert.notOk err, "mput returned an error: #{err}"
 				done()
 
+		it 'should fail mput of invalid rows', (done) ->
+			puts = []
+			puts = testRows.map (row) ->
+				o =
+					row: row.row
+				o["#{row.cf}:#{row.col}"] = 0
+				o
+
+			client.mput testTable, puts, (err, res) ->
+				assert.ok err, "must fail"
+				done()
+
 		it 'should put multiple rows via array of Put objects', (done) ->
 			puts = testRows.map (row) ->
 				put = new hbase.Put row.row
@@ -147,6 +159,15 @@ describe 'hbase', () ->
 			client.mput testTable, puts, (err, res) ->
 				assert.notOk err, "mput returned an error: #{err}"
 				done()
+
+		it 'should fail invalid Put object', (done) ->
+			put = new hbase.Put tRow
+			try
+				put.add tCf, tCol, 0
+			catch err
+
+			assert.ok err, "put.add must fail"
+			done()
 
 		it 'should checkAndPut', (done) ->
 			putRow tRow, tCf, tCol, tVal, () ->

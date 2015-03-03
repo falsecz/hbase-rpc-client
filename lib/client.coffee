@@ -486,7 +486,10 @@ module.exports = class Client extends EventEmitter
 					continue if column is 'row'
 
 					column = column.split ':'
-					put.add column[0], column[1], value
+					try
+						put.add column[0], column[1], value
+					catch err
+						return cb err
 
 			put.method = 'put'
 			workingList.push put

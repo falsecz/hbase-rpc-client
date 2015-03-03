@@ -17,6 +17,9 @@ module.exports = class Put
 		timestamp ?= ByteBuffer.Long.MAX_VALUE
 
 		@familyMap[cf] ?= []
+		unless typeof value is 'string' or Buffer.isBuffer value
+			throw new Error "Invalid value type, only strings and buffers are allowed.
+				Row: '#{@row}' cf: '#{cf}:#{qualifier}' value: #{value}"
 		@familyMap[cf].push {qualifier, value, timestamp}
 
 
