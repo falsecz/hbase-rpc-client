@@ -47,6 +47,7 @@ client = hbase
 ```
 
 ### put
+Values can be only strings or buffers.
 ##### `put table, put, callback`
 ```coffeescript
 put = new hbase.Put rowKey
@@ -75,6 +76,7 @@ client.delete table, del, (err, res) ->
 ```
 
 ### mput
+Values can be only strings or buffers.
 ##### `mput table, arrayOfPutObjects, callback`
 ##### `mput table, arrayOfObjects, callback`
 ```coffeescript
@@ -228,6 +230,7 @@ scan.each (err, row, done) ->
 ```
 
 ### checkAndPut
+Values can be only strings or buffers.
 ##### `checkAndPut table, rowKey, cf, qualifier, value, putObject, callback`
 ```coffeescript
 put = new hbase.Put rowKey1
