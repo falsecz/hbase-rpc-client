@@ -136,10 +136,12 @@ class Service
 		client = new r.clazz impl
 		r.children.forEach (child) =>
 			@[child.name] = (req, done) ->
-				clazz = child.resolvedRequestType.clazz
-				req = new clazz req if req not instanceof clazz
-				client[child.name].call client, req, done
-
+				try
+					clazz = child.resolvedRequestType.clazz
+					req = new clazz req if req not instanceof clazz
+					client[child.name].call client, req, done
+				catch err
+					done err
 
 class ClientService extends Service
 	constructor: (impl) ->

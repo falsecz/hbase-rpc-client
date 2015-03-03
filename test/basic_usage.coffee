@@ -138,6 +138,17 @@ describe 'hbase', () ->
 				assert.notOk err, "mput returned an error: #{err}"
 				done()
 
+		it 'should fail multiple invalid row', (done) ->
+			puts = []
+			puts = testRows.map (row) ->
+				o =
+					row: row.row
+				o["#{row.cf}:#{row.col}"] = 0
+				o
+			client.mput testTable, puts, (err, res) ->
+				assert.ok err, "must fail"
+				done()
+
 		it 'should put multiple rows via array of Put objects', (done) ->
 			puts = testRows.map (row) ->
 				put = new hbase.Put row.row
