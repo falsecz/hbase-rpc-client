@@ -1,11 +1,10 @@
+async    = require 'async'
+blanket  = require('blanket')()
+{exec}   = require 'child_process'
 {assert} = require 'chai'
-async = require 'async'
+
 ByteBuffer = require '../node_modules/protobufjs/node_modules/bytebuffer'
-config = require './test_config'
-
-blanket = (require 'blanket')()
-
-
+config     = require './test_config'
 
 describe 'hbase', () ->
 	before (done) ->
@@ -160,7 +159,7 @@ describe 'hbase', () ->
 				assert.notOk err, "mput returned an error: #{err}"
 				done()
 
-		it 'should fail invalid Put object', (done) ->
+		it 'should fail on invalid Put object', (done) ->
 			put = new hbase.Put tRow
 			try
 				put.add tCf, tCol, 0
@@ -179,7 +178,7 @@ describe 'hbase', () ->
 					assert.equal res.processed, yes, "checkAndPut wasn't processed"
 					getRow tRow, tCf, tCol, randomValue, done
 
-	describe 'get & mget', () ->
+	describe "get & mget", () ->
 		before (done) ->
 			puts = testRows.map (row) ->
 				put = new hbase.Put row.row
@@ -206,7 +205,7 @@ describe 'hbase', () ->
 				assert.equal res.row, tRow, "rowKey doesn't match"
 				done()
 
-		it 'should get multiple rows via simple array', (done) ->
+		it 'should mget multiple rows via simple array', (done) ->
 			gets = testRows.map (row) ->
 				row.row
 
@@ -215,7 +214,7 @@ describe 'hbase', () ->
 				assert.equal res.length, testRows.length, "mget didn't return expected number of rows"
 				done()
 
-		it 'should get multiple rows via array of Get objects', (done) ->
+		it 'should mget multiple rows via array of Get objects', (done) ->
 			gets = testRows.map (row) ->
 				new hbase.Get row.row
 
@@ -223,6 +222,28 @@ describe 'hbase', () ->
 				assert.notOk err, "mget returned an error: #{err}"
 				assert.equal res.length, testRows.length, "mget didn't return expected number of rows"
 				done()
+
+		it 'should get row after table split', (done) ->
+			tmpRow = testRows[3]
+			# cache regions.. just in case this test run alone
+			getRow tmpRow.row, tmpRow.cf, tmpRow.col, tmpRow.val, () ->
+				exec "echo \"split '#{config.testTable}', '4'\" | JRUBY_OPTS= #{process.env.HBASE_FILE}/bin/hbase shell", (err) ->
+					assert.notOk err, "table split returned with error: #{err}"
+					getRow tmpRow.row, tmpRow.cf, tmpRow.col, tmpRow.val, done
+
+		it 'should mget multiple rows after table split', (done) ->
+			gets = testRows.map (row) ->
+				new hbase.Get row.row
+
+			# cache regions.. just in case this test run alone
+			client.mget testTable, gets, (err, res) ->
+				exec "echo \"split '#{config.testTable}', '8'\" | JRUBY_OPTS= #{process.env.HBASE_FILE}/bin/hbase shell", (err) ->
+					assert.notOk err, "table split returned with error: #{err}"
+
+					client.mget testTable, gets, (err, res) ->
+						assert.notOk err, "mget returned an error: #{err}"
+						assert.equal res.length, testRows.length, "mget didn't return expected number of rows"
+						done()
 
 		it 'should get multiple versions', (done) ->
 			tests = [
@@ -598,7 +619,6 @@ describe 'hbase', () ->
 			]
 
 			async.waterfall tests, done
-
 
 
 

@@ -395,6 +395,10 @@ module.exports = class Client extends EventEmitter
 							continue
 
 						for response in serverResult.resultOrException
+							if response.exception
+								result.push response.exception
+								continue
+
 							o = @_parseResponse response.result
 							result.push o if o
 
@@ -585,7 +589,17 @@ module.exports = class Client extends EventEmitter
 				done()
 		, (err) =>
 			return cb err if err
-			@_multiAction table, actionsByServer, useCache, retry, cb
+			@_multiAction table, actionsByServer, useCache, retry, (err, results) =>
+				return cb err if err
+
+				for result in results
+					break if retry > @maxActionRetries
+
+					if @_isRetryException result
+						debug "Retrying #{++retry}-time on #{table}"
+						return @processBatch [table, workingList, false, retry, cb]...
+
+				cb null, results
 
 
 	prefetchRegionCache: (table, cb) =>
@@ -722,10 +736,11 @@ module.exports = class Client extends EventEmitter
 
 
 	_isRetryException: (err) ->
-		return no unless err.exceptionClassName
+		errName = err.exceptionClassName or err.name
+		return no unless errName
 
-		debug "Got error from region server: #{err.exceptionClassName}"
-		errName = err.exceptionClassName.toLowerCase()
+		debug "Got error from region server: #{errName}"
+		errName = errName.toLowerCase()
 
 		return errName.indexOf('org.apache.hadoop.hbase.') >= 0 or
 			errName.indexOf('offline') >= 0 or
