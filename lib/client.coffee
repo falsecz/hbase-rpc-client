@@ -45,6 +45,7 @@ module.exports = class Client extends EventEmitter
 		@rpcTimeout = options.rpcTimeout or hconstants.RPC_TIMEOUT
 		@pingTimeout = options.pingTimeout or hconstants.PING_TIMEOUT
 		@callTimeout = options.callTimeout or hconstants.CALL_TIMEOUT
+		@maxActionRetries = options.maxActionRetries or hconstants.MAX_ACTION_RETRIES
 		@zkStart = "init"
 		@_zkStartListener = []
 		@rootRegionZKPath = options.rootRegionZKPath or '/meta-region-server'
@@ -162,6 +163,8 @@ module.exports = class Client extends EventEmitter
 			if useCache
 				cachedRegion = @getCachedLocation table, row
 				return cb null, cachedRegion if cachedRegion
+			else
+				@_deleteCachedLocation table, row
 
 			@getRegionConnection @rootServer.hostName, @rootServer.port, (err, server) =>
 				server.rpc.Get req, (err, response) =>
@@ -206,6 +209,13 @@ module.exports = class Client extends EventEmitter
 
 	getCachedLocation: (table, row) =>
 		rDebug "Trying to find cached regionLocation for table #{table}"
+		cachedRegion = @_findRegionName table, row
+		return @cachedRegionLocations[table][cachedRegion] if cachedRegion
+		rDebug "Couldn't find cached regionLocation for table #{table}"
+		null
+
+
+	_findRegionName: (table, row) =>
 		return null unless @cachedRegionLocations[table] and Object.keys(@cachedRegionLocations[table]).length > 0
 		cachedRegions = Object.keys(@cachedRegionLocations[table])
 
@@ -215,9 +225,8 @@ module.exports = class Client extends EventEmitter
 
 			if (endKey.length is 0 or utils.bufferCompare(row, endKey) < 0) and (startKey.length is 0 or utils.bufferCompare(row, startKey) >= 0)
 				rDebug "Found cached regionLocation #{cachedRegion}"
-				return @cachedRegionLocations[table][cachedRegion]
+				return cachedRegion
 
-		rDebug "Didn't find cached regionLocation for table #{table}"
 		null
 
 
@@ -297,6 +306,13 @@ module.exports = class Client extends EventEmitter
 			@getRegionConnection location.server.toString(), (err, server) =>
 				return cb err if err
 
+				callback = (err) =>
+					if err and retry <= @maxActionRetries and @_isRetryException err
+						debug "Retrying #{++retry}-time #{method} on #{table} obj: #{JSON.stringify obj}"
+						return @_action [method, table, obj, false, retry, cb]...
+
+					cb arguments...
+
 				if method is 'get'
 					req =
 						region:
@@ -305,7 +321,7 @@ module.exports = class Client extends EventEmitter
 						gxt: obj.getFields()
 
 					server.rpc.Get req, (err, response) =>
-						return cb err if err
+						return callback err if err
 
 						cb null, @_parseResponse response.result
 				else if method in ['put', 'delete', 'increment']
@@ -315,7 +331,7 @@ module.exports = class Client extends EventEmitter
 							value: location.name
 						mutation: obj.getFields()
 
-					server.rpc.Mutate req, cb
+					server.rpc.Mutate req, callback
 				else if method in ['checkAndPut', 'checkAndDelete']
 					comparator =  new proto.BinaryComparator
 						comparable:
@@ -335,7 +351,7 @@ module.exports = class Client extends EventEmitter
 								name: 'org.apache.hadoop.hbase.filter.BinaryComparator'
 								serializedComparator: comparator.encode()
 
-					server.rpc.Mutate req, cb
+					server.rpc.Mutate req, callback
 
 
 	_multiAction: (table, multiActions, useCache, retry, cb) =>
@@ -379,6 +395,10 @@ module.exports = class Client extends EventEmitter
 							continue
 
 						for response in serverResult.resultOrException
+							if response.exception
+								result.push response.exception
+								continue
+
 							o = @_parseResponse response.result
 							result.push o if o
 
@@ -569,7 +589,17 @@ module.exports = class Client extends EventEmitter
 				done()
 		, (err) =>
 			return cb err if err
-			@_multiAction table, actionsByServer, useCache, retry, cb
+			@_multiAction table, actionsByServer, useCache, retry, (err, results) =>
+				return cb err if err
+
+				for result in results
+					break if retry > @maxActionRetries
+
+					if @_isRetryException result
+						debug "Retrying #{++retry}-time on #{table}"
+						return @processBatch [table, workingList, false, retry, cb]...
+
+				cb null, results
 
 
 	prefetchRegionCache: (table, cb) =>
@@ -698,5 +728,23 @@ module.exports = class Client extends EventEmitter
 				if region.server.toString() is serverName
 					delete @cachedRegionLocations[table]
 					@_prefetchRegionCacheList[table] = no
+
+
+	_deleteCachedLocation: (table, row) =>
+		cachedRegion = @_findRegionName table, row
+		delete @cachedRegionLocations[table][cachedRegion] if cachedRegion
+
+
+	_isRetryException: (err) ->
+		errName = err.exceptionClassName or err.name
+		return no unless errName
+
+		debug "Got error from region server: #{errName}"
+		errName = errName.toLowerCase()
+
+		return errName.indexOf('org.apache.hadoop.hbase.') >= 0 or
+			errName.indexOf('offline') >= 0 or
+			errName.indexOf('noserver') >= 0 or
+			errName.indexOf('notserving') >= 0
 
 
