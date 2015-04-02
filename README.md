@@ -7,6 +7,8 @@ node-hbase
 
 CoffeeScript HBase Implementation with protobuf support based on https://github.com/alibaba/node-hbase-client/
 
+### Installation
+`npm install -S hbase-rpc-client`
 
 ### Supported HBase versions
 * [x] 0.96.x
