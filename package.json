@@ -22,9 +22,9 @@
   "author": "",
   "license": "Apache",
   "bugs": {
-    "url": "https://github.com/falsecz/node-hbase/issues"
+    "url": "https://github.com/falsecz/hbase-rpc-client/issues"
   },
-  "homepage": "https://github.com/falsecz/node-hbase",
+  "homepage": "https://github.com/falsecz/hbase-rpc-client",
   "dependencies": {
     "protobufjs": "^2.2.1",
     "zookeeper-watcher": "^1.0.0",
