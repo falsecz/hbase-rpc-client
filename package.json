@@ -1,8 +1,8 @@
 {
-  "name": "node-hbase",
+  "name": "hbase-rpc-client",
   "version": "0.0.1",
   "description": "CoffeeScript HBase client implementation with protobuf support",
-  "main": "index.js",
+  "main": "index.coffee",
   "scripts": {
     "test": "DEBUG=-mocha*, ./node_modules/.bin/mocha  --compilers coffee:coffee-script/register --require coffee-script  test --reporter spec",
     "lint": "coffeelint --f coffeelint.json *.coffee lib/* test/*",
