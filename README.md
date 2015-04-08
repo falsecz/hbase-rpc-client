@@ -46,6 +46,9 @@ client = hbase
 	rpcTimeout: 30000
 	pingTimeout: 30000
 	callTimeout: 5000
+
+client.on "error", (err) ->
+	console.log "hbase client error:", err
 ```
 
 ### put
