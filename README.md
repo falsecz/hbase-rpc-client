@@ -1,4 +1,4 @@
-node-hbase
+hbase-rpc-client
 ==========
 [![Build Status](https://travis-ci.org/falsecz/hbase-rpc-client.svg?branch=master)](https://travis-ci.org/falsecz/hbase-rpc-client)
 [![Dependency Status](https://david-dm.org/falsecz/hbase-rpc-client.svg)](https://david-dm.org/falsecz/hbase-rpc-client)
@@ -37,7 +37,7 @@ CoffeeScript HBase Implementation with protobuf support based on https://github.
 
 ### Create a hbase client through zookeeper
 ```coffeescript
-hbase = require "node-hbase"
+hbase = require "hbase-rpc-client"
 
 client = hbase
 	zookeeperHosts: ["localhost"] # required
@@ -275,4 +275,4 @@ client.incrementColumnValue table, rowKey, cf, qualifier, incrementValue, (err, 
 
 ## License
 
-node-hbase is made available under the Apache License, version 2.0
+hbase-rpc-client is made available under the Apache License, version 2.0
