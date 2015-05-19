@@ -11,7 +11,7 @@ module.exports = class Get
 
 	addColumn: (cf, qualifier) =>
 		@familyMap[cf] ?= []
-		@familyMap[cf].push qualifier
+		@familyMap[cf].push qualifier if qualifier
 		@
 
 
