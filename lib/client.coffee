@@ -104,13 +104,7 @@ module.exports = class Client extends EventEmitter
 				callback = @_zkStartListener.pop()
 				callback()
 
-		@zk.once "connected", (err) =>
-			if err
-				@zkStart = "error"
-				zkDebug "[%s] [worker:%s] [hbase-client] zookeeper connect error: %s", new Date(), process.pid, err.stack
-				return @emit "error", err
-
-			@_zkWatch()
+		@zk.once "connected", @_zkWatch
 
 
 	getServerName: (hostname, port) ->
