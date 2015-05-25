@@ -108,7 +108,7 @@ module.exports = class Client extends EventEmitter
 			if err
 				@zkStart = "error"
 				zkDebug "[%s] [worker:%s] [hbase-client] zookeeper connect error: %s", new Date(), process.pid, err.stack
-				return @emit "ready", err
+				return @emit "error", err
 
 			@_zkWatch()
 
