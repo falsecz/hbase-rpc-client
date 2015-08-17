@@ -302,6 +302,7 @@ module.exports = class Client extends EventEmitter
 
 				callback = (err) =>
 					if err and retry <= @maxActionRetries and @_isRetryException err
+						debug "Error occured on server: #{location.server.toString()} region: #{location.name}"
 						debug "Retrying #{++retry}-time #{method} on #{table} obj: #{JSON.stringify obj}"
 						return @_action [method, table, obj, false, retry, cb]...
 
