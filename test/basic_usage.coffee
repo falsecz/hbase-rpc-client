@@ -56,7 +56,7 @@ describe 'hbase', () ->
 	tVal = testRows[0].val
 
 	randomValue = 'lkjhgfdsa'
-	hbase = require '../index.coffee'
+	hbase = require '../'
 
 	client = hbase
 		zookeeperHosts: config.zookeeperHosts
