@@ -1,16 +1,17 @@
 {
   "name": "hbase-rpc-client",
-  "version": "0.0.3",
+  "version": "0.1.2",
   "description": "CoffeeScript HBase client implementation with protobuf support",
-  "main": "index.coffee",
+  "main": "index.js",
   "scripts": {
+  "prepublish": "make",
     "test": "DEBUG=-mocha*, ./node_modules/.bin/mocha  --compilers coffee:coffee-script/register --require coffee-script  test --reporter spec",
-    "lint": "coffeelint --f coffeelint.json *.coffee lib/* test/*",
+    "lint": "coffeelint --f coffeelint.json *.coffee src/* test/*",
     "cov": "./node_modules/.bin/mocha  --compilers coffee:coffee-script/register --require coffee-script  -r blanket -R html-cov > coverage.html"
   },
   "config": {
     "blanket": {
-      "pattern": "/lib/",
+      "pattern": "/src/",
       "data-cover-never": "node_modules",
       "loader": "./node-loaders/coffee-script"
     }
@@ -35,7 +36,7 @@
   "devDependencies": {
     "chai": "~1.9.1",
     "mocha": "~1.19.0",
-    "coffee-script": "~1.7.1",
+    "coffee-script": "~1.9.1",
     "coffeelint": "~1.4.1",
     "require-dir": "~0.1.0",
     "blanket": "~1.1.6"
