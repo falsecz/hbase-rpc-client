@@ -4,7 +4,6 @@
   "description": "CoffeeScript HBase client implementation with protobuf support",
   "main": "index.js",
   "scripts": {
-  "prepublish": "make",
     "test": "DEBUG=-mocha*, ./node_modules/.bin/mocha  --compilers coffee:coffee-script/register --require coffee-script  test --reporter spec",
     "lint": "coffeelint --f coffeelint.json *.coffee src/* test/*",
     "cov": "./node_modules/.bin/mocha  --compilers coffee:coffee-script/register --require coffee-script  -r blanket -R html-cov > coverage.html"
