@@ -115,6 +115,17 @@ describe 'hbase', () ->
 			assert.notOk res, "row #{row} exists"
 			cb()
 
+	describe 'client', () ->
+		it 'should complain about not being able to connect to zk', (done) ->
+			tmpclient = hbase
+				zookeeperHosts: [randomValue]
+				rpcTimeout: 500
+
+			tmpclient.on "error", (err) ->
+				e = "Failed to connect to zookeeper."
+				assert.equal err.substring(0, e.length), e, "didn't return correct error"
+				done()
+
 	describe 'put & mput', () ->
 		afterEach (done) ->
 			rows = testRows.map (row) ->

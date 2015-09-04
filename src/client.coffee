@@ -41,6 +41,7 @@ module.exports = class Client extends EventEmitter
 			root: options.zookeeperRoot
 
 		@servers = {}
+		@options = options
 		@cachedRegionLocations = {}
 		@rpcTimeout = options.rpcTimeout or hconstants.RPC_TIMEOUT
 		@pingTimeout = options.pingTimeout or hconstants.PING_TIMEOUT
@@ -99,7 +100,15 @@ module.exports = class Client extends EventEmitter
 		return if @zkStart is "starting"
 		@zkStart = "starting"
 
+		timeout = setTimeout () =>
+			err = "Failed to connect to zookeeper. zkHosts: [#{@options.zookeeperHosts}] zkRoot: '#{@options.zookeeperRoot}'"
+			zkDebug err
+			@emit "error", err
+		, @rpcTimeout
+
 		@once 'ready', () =>
+			clearTimeout timeout
+
 			while @_zkStartListener.length
 				callback = @_zkStartListener.pop()
 				callback()
