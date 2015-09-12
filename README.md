@@ -114,11 +114,11 @@ client.mput table, [put1, put2], (err, res) ->
 get1 = new hbase.Get rowKey1
 get2 = new hbase.Get rowKey2
 
-client.get table, [get1, get2], (err, res) ->
+client.mget table, [get1, get2], (err, res) ->
 	console.log arguments
 ```
 ```coffeescript
-client.get table, [rowKey1, rowKey2], (err, res) ->
+client.mget table, [rowKey1, rowKey2], (err, res) ->
 	console.log arguments
 ```
 
@@ -129,11 +129,11 @@ client.get table, [rowKey1, rowKey2], (err, res) ->
 delete1 = new hbase.Delete rowKey1
 delete2 = new hbase.Delete rowKey2
 
-client.delete table, [delete1, delete2], (err, res) ->
+client.mdelete table, [delete1, delete2], (err, res) ->
 	console.log arguments
 ```
 ```coffeescript
-client.delete table, [rowKey1, rowKey2], (err, res) ->
+client.mdelete table, [rowKey1, rowKey2], (err, res) ->
 	console.log arguments
 ```
 
