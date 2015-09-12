@@ -188,7 +188,7 @@ module.exports = class Client extends EventEmitter
 
 
 	_parseRegionInfo: (res) ->
-		return null unless Object.keys(res).length
+		return null unless res and Object.keys(res).length
 
 		regionInfo = res.cols['info:regioninfo'].value
 		regionInfo = regionInfo.slice regionInfo.toString().indexOf('PBUF') + 4
