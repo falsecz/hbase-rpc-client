@@ -20,7 +20,7 @@
     "url": "git://github.com/falsecz/hbase-rpc-client.git"
   },
   "author": "",
-  "license": "Apache",
+  "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/falsecz/hbase-rpc-client/issues"
   },
@@ -33,11 +33,11 @@
     "zookeeper-watcher": "^1.0.1"
   },
   "devDependencies": {
-    "chai": "~1.9.1",
-    "mocha": "~1.19.0",
-    "coffee-script": "~1.9.1",
-    "coffeelint": "~1.4.1",
-    "require-dir": "~0.1.0",
-    "blanket": "~1.1.6"
+    "blanket": "~1.1.7",
+    "chai": "^3.2.0",
+    "coffee-script": "~1.10.0",
+    "coffeelint": "~1.11.1",
+    "mocha": "~2.3.2",
+    "require-dir": "~0.3.0"
   }
 }
