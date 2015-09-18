@@ -1,4 +1,5 @@
 debug           = (require 'debug') 'hbase-connection'
+assert          = require 'assert'
 net             = require 'net'
 hconstants      = require './hconstants'
 Call            = require './call'
@@ -8,15 +9,26 @@ DataInputStream = require './data-input-stream'
 
 
 ProtoBuf   = require 'protobufjs'
+ProtoBuf.convertFieldsToCamelCase = true
 ByteBuffer = require 'protobufjs/node_modules/bytebuffer'
 
-builder    = ProtoBuf.loadProtoFile("#{__dirname}/../proto/Client.proto")
+builderClient    = ProtoBuf.loadProtoFile("#{__dirname}/../proto/Client.proto")
+builderMaster    = ProtoBuf.loadProtoFile("#{__dirname}/../proto/Master.proto")
+builderAdmin    = ProtoBuf.loadProtoFile("#{__dirname}/../proto/Admin.proto")
 rpcBuilder = ProtoBuf.loadProtoFile("#{__dirname}/../proto/RPC.proto")
 
-proto      = builder.build()
+# protoClient = builderClient.build()
+# protoAdmin = builderAdmin.build()
 rpcProto   = rpcBuilder.build()
 
-{ClientService, GetRequest} = proto
+BUILDERS =
+	ClientService: builderClient
+	AdminService: builderAdmin
+	MasterService: builderMaster
+
+# {ClientService, GetRequest} = protoClient
+# {AdminService} = adminClient
+
 {ConnectionHeader, RequestHeader, ResponseHeader} = rpcProto
 
 
@@ -24,6 +36,11 @@ rpcProto   = rpcBuilder.build()
 connectionId = 0
 module.exports = class Connection extends EventEmitter
 	constructor: (options) ->
+		assert options, "Missing options"
+		assert options.host, "Missing host"
+		assert options.port, "Missing port"
+
+		@serviceName = options.service or 'ClientService'
 		@id = connectionId++
 		@callId = 1
 		@calls = {}
@@ -38,7 +55,7 @@ module.exports = class Connection extends EventEmitter
 		@_connected = no
 		@_socketError = null
 		@_callNums = 0
-		@_callTimeout = options.callTimeout
+		@_callTimeout = options.callTimeout or 5000 # TODO from constants
 		@setupIOStreams()
 
 
@@ -53,14 +70,18 @@ module.exports = class Connection extends EventEmitter
 		@socket.on 'connect', () =>
 			debug "connected to #{@name}"
 			@writeHead()
+			# console.log @serviceName
 			ch = new ConnectionHeader
-				serviceName: "ClientService"
+				serviceName: @serviceName
+			# console.log "XXXX", ch
 			header = ch.encode().toBuffer()
 			@out.writeInt header.length
 			@out.write header
 			@_connected = yes
 
 			impl = (method, req, done) =>
+				builder = BUILDERS[@serviceName]
+				assert builder, "Invalid builder"
 				reflect = builder.lookup method
 				reqHeader = new RequestHeader
 					callId: @callId++
@@ -71,7 +92,7 @@ module.exports = class Connection extends EventEmitter
 				@out.writeDelimitedBuffers reqHeaderBuffer, req.toBuffer()
 				@calls[reqHeader.callId] = new Call reflect.resolvedResponseType.clazz, reqHeader, @_callTimeout, done
 
-			@rpc = new ClientService impl
+			@rpc = new Service @serviceName, impl
 
 			@emit 'connect'
 
@@ -132,6 +153,9 @@ module.exports = class Connection extends EventEmitter
 
 class Service
 	constructor: (service, impl) ->
+		builder = BUILDERS[service]
+		assert builder, "Invalid builder"
+
 		r = builder.lookup service
 		client = new r.clazz impl
 		r.children.forEach (child) =>
@@ -142,10 +166,6 @@ class Service
 					client[child.name].call client, req, done
 				catch err
 					done err
-
-class ClientService extends Service
-	constructor: (impl) ->
-		super 'ClientService', impl
 
 
 
