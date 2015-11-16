@@ -10,6 +10,8 @@ env:
 node_js:
   - "0.10"
   - "0.12"
+  - "4.2"
+  - "5.0"
 
 before_script:
   - 'export HBASE_VERSION=`curl http://archive.apache.org/dist/hbase/ | grep -o "hbase-$HBASE_VER.[0-9.]*" | tail -1`'
