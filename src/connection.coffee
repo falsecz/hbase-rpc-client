@@ -29,8 +29,8 @@ module.exports = class Connection extends EventEmitter
 		@calls = {}
 		@header = null
 		@socket = null
-		@tcpNoDelay = no
-		@tcpKeepAlive= yes
+		@_tcpNoDelay = options.tcpNoDelay
+		@_tcpKeepAlive = options.tcpKeepAlive
 		@address =
 			host: options.host
 			port: options.port
@@ -101,8 +101,8 @@ module.exports = class Connection extends EventEmitter
 		timeoutFailures = 0
 		@socket = net.connect @address
 
-		@socket.setNoDelay @tcpNoDelay
-		@socket.setKeepAlive @tcpKeepAlive
+		@socket.setNoDelay @_tcpNoDelay
+		@socket.setKeepAlive @_tcpKeepAlive
 
 		@socket.on "timeout", @_handleTimeout
 		@socket.on "close", @_handleClose
