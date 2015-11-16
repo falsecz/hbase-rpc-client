@@ -17,6 +17,3 @@ module.exports =
 	SOCKET_RETRY_WAIT_MS: 200
 	MAX_ACTION_RETRIES: 3
 
-	TCP_NO_DELAY: no
-	TCP_KEEP_ALIVE: yes
-
