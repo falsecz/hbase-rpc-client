@@ -1,6 +1,6 @@
 debug          = require('debug')('hbase:data_input_stream')
 Readable       = require('readable-stream').Readable
-ByteBuffer     = require 'protobufjs/node_modules/bytebuffer'
+ByteBuffer     = require 'bytebuffer'
 {EventEmitter} = require 'events'
 
 

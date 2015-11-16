@@ -3,7 +3,7 @@ blanket  = require('blanket')()
 {exec}   = require 'child_process'
 {assert} = require 'chai'
 
-ByteBuffer = require '../node_modules/protobufjs/node_modules/bytebuffer'
+ByteBuffer = require 'bytebuffer'
 config     = require './test_config'
 
 describe 'hbase', () ->

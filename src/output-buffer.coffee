@@ -1,4 +1,4 @@
-ByteBuffer = require 'protobufjs/node_modules/bytebuffer'
+ByteBuffer = require 'bytebuffer'
 
 
 

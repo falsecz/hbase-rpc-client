@@ -1,5 +1,5 @@
 ProtoBuf   = require("protobufjs")
-ByteBuffer = require 'protobufjs/node_modules/bytebuffer'
+ByteBuffer = require 'bytebuffer'
 
 ProtoBuf.convertFieldsToCamelCase = true
 builder = ProtoBuf.loadProtoFile("#{__dirname}/../proto/Client.proto")

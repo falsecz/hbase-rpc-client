@@ -1,5 +1,5 @@
 ProtoBuf   = require("protobufjs")
-ByteBuffer = require 'protobufjs/node_modules/bytebuffer'
+ByteBuffer = require 'bytebuffer'
 hconstants = require './hconstants'
 
 ProtoBuf.convertFieldsToCamelCase = true
