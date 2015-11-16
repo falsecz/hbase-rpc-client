@@ -46,10 +46,13 @@ client = hbase
 	rpcTimeout: 30000
 	pingTimeout: 30000
 	callTimeout: 5000
+	tcpNoDelay: no
+	tcpKeepAlive: yes
 
 client.on "error", (err) ->
 	console.log "hbase client error:", err
 ```
+In case you experience slow communication with hbase, please see issue #24 and try to set tcpNoDelay: true
 
 ### put
 Values can be only strings or buffers.
