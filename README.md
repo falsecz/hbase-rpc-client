@@ -52,9 +52,9 @@ client.on "error", (err) ->
 ```
 
 Timeouts explained:
-zookeeperReconnectTimeout - Time after zookeeper watcher creates new zk client upon receiving following events: closing, session_expired or authentication_failed (other events are handled by node-zookeeper-client). Default: 20000ms (set by zookeeper-watcher)
-rpcTimeout - Time after hbase-rpc-client emits an error if it doesn't manage to ensure zookeeper connection or doesn't manage to get region server connection. Default: 30000ms
-callTimeout - Time after each operation call on hbase timeouts. Default: 5000ms
+* zookeeperReconnectTimeout - Time after zookeeper watcher creates new zk client upon receiving following events: closing, session_expired or authentication_failed (other events are handled by node-zookeeper-client). Default: 20000ms (set by zookeeper-watcher)
+* rpcTimeout - Time after hbase-rpc-client emits an error if it doesn't manage to ensure zookeeper connection or doesn't manage to get region server connection. Default: 30000ms
+* callTimeout - Time after each operation call on hbase timeouts. Default: 5000ms
 
 ### put
 Values can be only strings or buffers.
