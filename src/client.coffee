@@ -39,12 +39,12 @@ module.exports = class Client extends EventEmitter
 		@zk = new ZooKeeperWatcher
 			hosts: options.zookeeperHosts
 			root: options.zookeeperRoot
+			reconnectTimeout: options.zookeeperReconnectTimeout
 
 		@servers = {}
 		@options = options
 		@cachedRegionLocations = {}
 		@rpcTimeout = options.rpcTimeout or hconstants.RPC_TIMEOUT
-		@pingTimeout = options.pingTimeout or hconstants.PING_TIMEOUT
 		@callTimeout = options.callTimeout or hconstants.CALL_TIMEOUT
 		@maxActionRetries = options.maxActionRetries or hconstants.MAX_ACTION_RETRIES
 		@zkStart = "init"
