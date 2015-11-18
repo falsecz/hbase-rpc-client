@@ -12,6 +12,7 @@ module.exports = class Call
 			@called = yes
 			@cb 'timedout'
 		, @timeout
+		debug "operation #{@header.callId} (#{@header.methodName}) called"
 
 
 	complete: (err, data) =>
