@@ -32,10 +32,11 @@ module.exports = class DataInputStream extends EventEmitter
 
 		return if @awaitBytes and @awaitBytes > @buffer.length
 
-		@processMessage @buffer.slice 0, @awaitBytes
+		message = @buffer.slice 0, @awaitBytes
 		@buffer = @buffer.slice @awaitBytes
 		@awaitBytes = 0
 
+		@processMessage message
 		@processData() if @buffer.length > 0
 
 
