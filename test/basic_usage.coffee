@@ -491,7 +491,7 @@ describe 'hbase', () ->
 					done()
 
 		it 'should scan the table with startRow and stopRow', (done) ->
-			scan = client.getScanner testTable, '5', '6'
+			scan = client.getScanner testTable, '4', '6'
 
 			scan.next (err, row) ->
 				assert.notOk err, "scan.next returned an error: #{err}"
@@ -501,6 +501,38 @@ describe 'hbase', () ->
 					assert.notOk err, "scan.next returned an error: #{err}"
 					assert.equal Object.keys(row), 0, "should return empty object"
 					done()
+
+		it 'should scan the table with startRow only', (done) ->
+			scan = client.getScanner testTable, '3'
+
+			async.eachSeries [1..testRows.length], (i, cb) ->
+				if i is testRows.length
+					scan.next (err, row) ->
+						assert.notOk err, "scan.next returned an error: #{err}"
+						assert.equal Object.keys(row), 0, "last scan should return empty object"
+						cb()
+				else
+					scan.next (err, row) ->
+						assert.notOk err, "scan.next returned an error: #{err}"
+						assert.equal row.row, testRows[i].row, "rowKey doesn't match"
+						cb()
+			, done
+
+		it 'should scan the table with stopRow only', (done) ->
+			scan = client.getScanner testTable, undefined, '6'
+
+			async.eachSeries [0..2], (i, cb) ->
+				if i is 2
+					scan.next (err, row) ->
+						assert.notOk err, "scan.next returned an error: #{err}"
+						assert.equal Object.keys(row), 0, "last scan should return empty object"
+						cb()
+				else
+					scan.next (err, row) ->
+						assert.notOk err, "scan.next returned an error: #{err}"
+						assert.equal row.row, testRows[i].row, "rowKey doesn't match"
+						cb()
+			, done
 
 		it 'should report invalid filter for scan', (done) ->
 			scan = client.getScanner testTable
