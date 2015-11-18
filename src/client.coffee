@@ -47,6 +47,8 @@ module.exports = class Client extends EventEmitter
 		@rpcTimeout = options.rpcTimeout or hconstants.RPC_TIMEOUT
 		@callTimeout = options.callTimeout or hconstants.CALL_TIMEOUT
 		@maxActionRetries = options.maxActionRetries or hconstants.MAX_ACTION_RETRIES
+		@tcpNoDelay = options.tcpNoDelay or no
+		@tcpKeepAlive = options.tcpKeepAlive or yes
 		@zkStart = "init"
 		@_zkStartListener = []
 		@rootRegionZKPath = options.rootRegionZKPath or '/meta-region-server'
@@ -672,6 +674,8 @@ module.exports = class Client extends EventEmitter
 			port: port
 			rpcTimeout: @rpcTimeout
 			callTimeout: @callTimeout
+			tcpNoDelay: @tcpNoDelay
+			tcpKeepAlive: @tcpKeepAlive
 			logger: @logger
 		server.state = "connecting"
 

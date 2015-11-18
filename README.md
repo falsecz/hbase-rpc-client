@@ -46,10 +46,13 @@ client = hbase
 	rootRegionZKPath: "/meta-region-server"
 	rpcTimeout: 30000
 	callTimeout: 5000
+	tcpNoDelay: no
+	tcpKeepAlive: yes
 
 client.on "error", (err) ->
 	console.log "hbase client error:", err
 ```
+In case you experience slow communication with hbase, please see issue #24 and try to set tcpNoDelay: true
 
 Timeouts explained:
 * zookeeperReconnectTimeout - Time after zookeeper watcher creates new zk client upon receiving following events: closing, session_expired or authentication_failed (other events are handled by node-zookeeper-client). Default: 20000ms (set by zookeeper-watcher)
