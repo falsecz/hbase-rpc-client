@@ -27,6 +27,7 @@ CoffeeScript HBase Implementation with protobuf support based on https://github.
 * [x] scan:
 	 * [√] filter
 	 * [√] filterList
+	 * [√] reverse scan
 * [x] increment
 * [x] incrementColumnValue
 * [ ] getRowOrBefore
@@ -148,6 +149,7 @@ client.mdelete table, [rowKey1, rowKey2], (err, res) ->
 ### scan
 ##### `scanner = getScanner table, startRow, stopRow`
 ##### `scanner.setFilter filter`
+##### `scanner.setReversed()`
 ##### `scanner.next callback`
 ##### `scanner.each function, callback`
 ##### `scanner.toArray callback`

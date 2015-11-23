@@ -126,6 +126,88 @@ describe 'hbase', () ->
 				assert.equal err.substring(0, e.length), e, "didn't return correct error"
 				done()
 
+	describe 'utils - buffer increment', () ->
+		it 'should increment new Buffer []', (done) ->
+			buffer = hbase.utils.bufferIncrement new Buffer []
+			assert.equal buffer.length, 1, "didn't return buffer with correct length"
+			assert.equal buffer[0], 1, "didn't return buffer[0] with correct value #{buffer}"
+			done()
+
+		it 'should increment new Buffer [0]', (done) ->
+			buffer = hbase.utils.bufferIncrement new Buffer [0]
+			assert.equal buffer.length, 1, "didn't return buffer with correct length"
+			assert.equal buffer[0], 1, "didn't return buffer[0] with correct value #{buffer}"
+			done()
+
+		it 'should increment new Buffer [255]', (done) ->
+			buffer = hbase.utils.bufferIncrement new Buffer [255]
+			assert.equal buffer.length, 2, "didn't return buffer with correct length"
+			assert.equal buffer[0], 1, "didn't return buffer[0] with correct value"
+			assert.equal buffer[1], 0, "didn't return buffer[1] with correct value"
+			done()
+
+		it 'should increment new Buffer [1, 2, 3]', (done) ->
+			buffer = hbase.utils.bufferIncrement new Buffer [1, 2, 3]
+			assert.equal buffer.length, 3, "didn't return buffer with correct length"
+			assert.equal buffer[0], 1, "didn't return buffer[0] with correct value"
+			assert.equal buffer[1], 2, "didn't return buffer[1] with correct value"
+			assert.equal buffer[2], 4, "didn't return buffer[2] with correct value"
+			done()
+
+		it 'should increment new Buffer [1, 2, 255]', (done) ->
+			buffer = hbase.utils.bufferIncrement new Buffer [1, 2, 255]
+			assert.equal buffer.length, 3, "didn't return buffer with correct length"
+			assert.equal buffer[0], 1, "didn't return buffer[0] with correct value"
+			assert.equal buffer[1], 3, "didn't return buffer[1] with correct value"
+			assert.equal buffer[2], 0, "didn't return buffer[2] with correct value"
+			done()
+
+		it 'should increment new Buffer [1, 255, 255]', (done) ->
+			buffer = hbase.utils.bufferIncrement new Buffer [1, 255, 255]
+			assert.equal buffer.length, 3, "didn't return buffer with correct length"
+			assert.equal buffer[0], 2, "didn't return buffer[0] with correct value"
+			assert.equal buffer[1], 0, "didn't return buffer[1] with correct value"
+			assert.equal buffer[2], 0, "didn't return buffer[2] with correct value"
+			done()
+
+	describe 'utils - buffer decrement', () ->
+		it 'should decrement new Buffer []', (done) ->
+			buffer = hbase.utils.bufferDecrement new Buffer []
+			assert.equal buffer.length, 0, "didn't return buffer with correct length"
+			done()
+
+		it 'should decrement new Buffer [0]', (done) ->
+			buffer = hbase.utils.bufferDecrement new Buffer [0]
+			assert.equal buffer.length, 0, "didn't return buffer with correct length"
+			done()
+
+		it 'should decrement new Buffer [1]', (done) ->
+			buffer = hbase.utils.bufferDecrement new Buffer [1]
+			assert.equal buffer.length, 1, "didn't return buffer with correct length"
+			assert.equal buffer[0], 0, "didn't return buffer[0] with correct value"
+			done()
+
+		it 'should decrement new Buffer [1, 1, 1]', (done) ->
+			buffer = hbase.utils.bufferDecrement new Buffer [1, 1, 1]
+			assert.equal buffer.length, 3, "didn't return buffer with correct length"
+			assert.equal buffer[0], 1, "didn't return buffer[0] with correct value"
+			assert.equal buffer[1], 1, "didn't return buffer[1] with correct value"
+			assert.equal buffer[2], 0, "didn't return buffer[2] with correct value"
+			done()
+
+		it 'should decrement new Buffer [1, 1, 0]', (done) ->
+			buffer = hbase.utils.bufferDecrement new Buffer [1, 1, 0]
+			assert.equal buffer.length, 2, "didn't return buffer with correct length"
+			assert.equal buffer[0], 1, "didn't return buffer[0] with correct value"
+			assert.equal buffer[1], 0, "didn't return buffer[1] with correct value"
+			done()
+
+		it 'should decrement new Buffer [1, 0, 0]', (done) ->
+			buffer = hbase.utils.bufferDecrement new Buffer [1, 0, 0]
+			assert.equal buffer.length, 1, "didn't return buffer with correct length"
+			assert.equal buffer[0], 0, "didn't return buffer[0] with correct value"
+			done()
+
 	describe 'put & mput', () ->
 		afterEach (done) ->
 			rows = testRows.map (row) ->
@@ -476,6 +558,23 @@ describe 'hbase', () ->
 						cb()
 			, done
 
+		it 'should reverse-scan the table', (done) ->
+			scan = client.getScanner testTable
+			scan.setReversed yes
+
+			async.eachSeries [testRows.length..0], (i, next) ->
+				if i is 0
+					scan.next (err, row) ->
+						assert.notOk err, "scan.next returned an error: #{err}"
+						assert.equal Object.keys(row), 0, "last scan should return empty object"
+						next()
+				else
+					scan.next (err, row) ->
+						assert.notOk err, "scan.next returned an error: #{err}"
+						assert.equal row.row, testRows[i-1].row, "rowKey doesn't match"
+						next()
+			, done
+
 		it 'should stop scanning after closing the scanner', (done) ->
 			scan = client.getScanner testTable
 
@@ -502,36 +601,53 @@ describe 'hbase', () ->
 					assert.equal Object.keys(row), 0, "should return empty object"
 					done()
 
+		it 'should reverse-scan the table with startRow and stopRow', (done) ->
+			scan = client.getScanner testTable, '4', '99'
+			scan.setReversed yes
+
+			scan.next (err, row) ->
+				assert.notOk err, "scan.next returned an error: #{err}"
+				assert.equal row.row, testRows[2].row, "rowKey doesn't match"
+
+				scan.next (err, row) ->
+					assert.notOk err, "scan.next returned an error: #{err}"
+					assert.equal row.row, testRows[1].row, "rowKey doesn't match"
+
+					scan.next (err, row) ->
+						assert.notOk err, "scan.next returned an error: #{err}"
+						assert.equal Object.keys(row), 0, "should return empty object"
+						done()
+
 		it 'should scan the table with startRow only', (done) ->
 			scan = client.getScanner testTable, '3'
 
-			async.eachSeries [1..testRows.length], (i, cb) ->
+			async.eachSeries [1..testRows.length], (i, next) ->
 				if i is testRows.length
 					scan.next (err, row) ->
 						assert.notOk err, "scan.next returned an error: #{err}"
 						assert.equal Object.keys(row), 0, "last scan should return empty object"
-						cb()
+						next()
 				else
 					scan.next (err, row) ->
 						assert.notOk err, "scan.next returned an error: #{err}"
 						assert.equal row.row, testRows[i].row, "rowKey doesn't match"
-						cb()
+						next()
 			, done
 
 		it 'should scan the table with stopRow only', (done) ->
 			scan = client.getScanner testTable, undefined, '6'
 
-			async.eachSeries [0..2], (i, cb) ->
+			async.eachSeries [0..2], (i, next) ->
 				if i is 2
 					scan.next (err, row) ->
 						assert.notOk err, "scan.next returned an error: #{err}"
 						assert.equal Object.keys(row), 0, "last scan should return empty object"
-						cb()
+						next()
 				else
 					scan.next (err, row) ->
 						assert.notOk err, "scan.next returned an error: #{err}"
 						assert.equal row.row, testRows[i].row, "rowKey doesn't match"
-						cb()
+						next()
 			, done
 
 		it 'should report invalid filter for scan', (done) ->
@@ -639,9 +755,9 @@ describe 'hbase', () ->
 			b = b.toBuffer()
 
 			tests = [
-				(cb) ->
-					putRow tRow, tCf, tCol, b, cb
-				(r, cb) ->
+				(next) ->
+					putRow tRow, tCf, tCol, b, next
+				(r, next) ->
 					increment = new hbase.Increment tRow
 					assert.equal increment.getRow(), tRow, "rowKey doesn't match"
 					increment.add tCf, tCol, inc
@@ -650,15 +766,15 @@ describe 'hbase', () ->
 						assert.notOk err, "increment returned an error: #{err}"
 						val = res.result.cell[0].value.toBuffer()
 						assert.equal hbase.utils.bufferCompare(val, b), inc, "value wasn't incremented"
-						cb()
-				(cb) ->
+						next()
+				(next) ->
 					client.incrementColumnValue testTable, tRow, tCf, tCol, inc, (err, res) ->
 						assert.notOk err, "incrementColumnValue returned an error: #{err}"
 						val = res.result.cell[0].value.toBuffer()
 						assert.equal hbase.utils.bufferCompare(val, b), inc * 2, "value wasn't incremented"
-						cb()
-				(cb) ->
-					deleteRow tRow, cb
+						next()
+				(next) ->
+					deleteRow tRow, next
 			]
 
 			async.waterfall tests, done

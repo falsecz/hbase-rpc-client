@@ -46,6 +46,12 @@ module.exports.Scan = class Scan
 		@location = null
 		@timeout = null
 		@row = 0
+		@reversed = no
+
+
+	setReversed: (reversed = yes) =>
+		@reversed = !!reversed
+		@
 
 
 	setFilter: (filter) =>
@@ -67,7 +73,8 @@ module.exports.Scan = class Scan
 					type: "REGION_NAME"
 					value: @location.name
 				numberOfRows: @numCached
-				scan: {}
+				scan:
+					reversed: @reversed
 
 			if @scannerId
 				req.scannerId = @scannerId
@@ -99,7 +106,7 @@ module.exports.Scan = class Scan
 		if len is @numCached
 			nextRegion = no
 		# or there are no more regions to scan
-		if @location.endKey.length is 0
+		if (@location.endKey.length is 0 and not @reversed) or (@location.startKey.length is 0 and @reversed)
 			nextRegion = no
 		# or stopRow was contained in the current region
 		if @stopRow and utils.bufferCompare(@location.endKey, new Buffer @stopRow) > 0 and len isnt @numCached
@@ -108,6 +115,7 @@ module.exports.Scan = class Scan
 		# we need to go to another region
 		if len < @numCached
 			@nextStartRow = utils.bufferIncrement @location.endKey
+			@nextStartRow = utils.bufferDecrement @location.startKey if @reversed
 			@nextStartRow = @nextStartRow.toString()
 
 		# go to another region
@@ -128,7 +136,10 @@ module.exports.Scan = class Scan
 	getServerAndLocation: (table, startRow, cb) =>
 		return cb null, @server, @location if @server and @location
 
-		@client.locateRegion table, startRow, (err, location) =>
+		{ locateRegion } = @client
+		locateRegion = @client.locatePreviousRegion if @reversed
+
+		locateRegion table, startRow, (err, location) =>
 			return cb err if err
 
 			@client.getRegionConnection location.server.toString(), (err, server) ->
@@ -142,7 +153,10 @@ module.exports.Scan = class Scan
 		return cb null, (@cached.splice 0, 1)[0] if @cached.length
 
 		startRow = @nextStartRow
-		startRow ?= @startRow
+		if @reversed
+			startRow ?= new Buffer []
+		else
+			startRow ?= @startRow
 
 		@_getData startRow, (err) =>
 			return cb err if err
