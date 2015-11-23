@@ -558,22 +558,23 @@ describe 'hbase', () ->
 						cb()
 			, done
 
-		it 'should reverse-scan the table', (done) ->
-			scan = client.getScanner testTable
-			scan.setReversed yes
+		if process.env.HBASE_VER isnt "0.96"
+			it 'should reverse-scan the table', (done) ->
+				scan = client.getScanner testTable
+				scan.setReversed yes
 
-			async.eachSeries [testRows.length..0], (i, next) ->
-				if i is 0
-					scan.next (err, row) ->
-						assert.notOk err, "scan.next returned an error: #{err}"
-						assert.equal Object.keys(row), 0, "last scan should return empty object"
-						next()
-				else
-					scan.next (err, row) ->
-						assert.notOk err, "scan.next returned an error: #{err}"
-						assert.equal row.row, testRows[i-1].row, "rowKey doesn't match"
-						next()
-			, done
+				async.eachSeries [testRows.length..0], (i, next) ->
+					if i is 0
+						scan.next (err, row) ->
+							assert.notOk err, "scan.next returned an error: #{err}"
+							assert.equal Object.keys(row), 0, "last scan should return empty object"
+							next()
+					else
+						scan.next (err, row) ->
+							assert.notOk err, "scan.next returned an error: #{err}"
+							assert.equal row.row, testRows[i-1].row, "rowKey doesn't match"
+							next()
+				, done
 
 		it 'should stop scanning after closing the scanner', (done) ->
 			scan = client.getScanner testTable
@@ -601,22 +602,23 @@ describe 'hbase', () ->
 					assert.equal Object.keys(row), 0, "should return empty object"
 					done()
 
-		it 'should reverse-scan the table with startRow and stopRow', (done) ->
-			scan = client.getScanner testTable, '4', '99'
-			scan.setReversed yes
-
-			scan.next (err, row) ->
-				assert.notOk err, "scan.next returned an error: #{err}"
-				assert.equal row.row, testRows[2].row, "rowKey doesn't match"
+		if process.env.HBASE_VER isnt "0.96"
+			it 'should reverse-scan the table with startRow and stopRow', (done) ->
+				scan = client.getScanner testTable, '4', '99'
+				scan.setReversed yes
 
 				scan.next (err, row) ->
 					assert.notOk err, "scan.next returned an error: #{err}"
-					assert.equal row.row, testRows[1].row, "rowKey doesn't match"
+					assert.equal row.row, testRows[2].row, "rowKey doesn't match"
 
 					scan.next (err, row) ->
 						assert.notOk err, "scan.next returned an error: #{err}"
-						assert.equal Object.keys(row), 0, "should return empty object"
-						done()
+						assert.equal row.row, testRows[1].row, "rowKey doesn't match"
+
+						scan.next (err, row) ->
+							assert.notOk err, "scan.next returned an error: #{err}"
+							assert.equal Object.keys(row), 0, "should return empty object"
+							done()
 
 		it 'should scan the table with startRow only', (done) ->
 			scan = client.getScanner testTable, '3'
