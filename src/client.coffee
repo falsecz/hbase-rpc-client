@@ -141,6 +141,15 @@ module.exports = class Client extends EventEmitter
 			@locateRegionInMeta table, row, useCache, cb
 
 
+	locatePreviousRegion: (table, endKey, cb) =>
+		@prefetchRegionCache table, () =>
+			return @locateRegion table, endKey, cb if endKey.length
+
+			# looking for the last region of given table
+			for regionName, region of @cachedRegionLocations[table]
+				return cb null, region if region.endKey.length is 0
+
+
 	locateRegionInMeta: (table, row, useCache, cb) =>
 		rDebug "locateRegionInMeta table: #{table} row: #{row}"
 		region = @createRegionName(table, row, '', yes)
