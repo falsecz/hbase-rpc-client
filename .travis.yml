@@ -3,7 +3,6 @@ sudo: false
 language: node_js
 
 env:
-  - HBASE_VER=0.96
   - HBASE_VER=0.98
   - HBASE_VER=1.0
 
