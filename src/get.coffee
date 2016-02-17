@@ -36,7 +36,7 @@ module.exports = class Get
 			maxVersions: @maxVersions
 
 		for cf, qualifiers of @familyMap
-			o.column =
+			o.column.push
 				family: cf
 				qualifier: qualifiers.map (qualifier) ->
 					qualifier
