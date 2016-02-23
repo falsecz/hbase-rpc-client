@@ -34,7 +34,7 @@ module.exports = class Client extends EventEmitter
 
 		options.zookeeperRoot = options.zookeeperRoot or "/hbase"
 		if options.zookeeper and typeof options.zookeeper.quorum is "string"
-			options.zookeeperHosts = options.zookeeper.quorum.split(SERVERNAME_SEPARATOR)
+			options.zookeeperHosts = options.zookeeper.quorum.split(hconstants.SERVERNAME_SEPARATOR)
 
 		@zk = new ZooKeeperWatcher
 			hosts: options.zookeeperHosts
