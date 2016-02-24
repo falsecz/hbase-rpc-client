@@ -378,11 +378,11 @@ module.exports = class Client extends EventEmitter
 			cb = retry
 			retry = 0
 
-		req =
-			regionAction: []
-
 		result = []
 		async.each Object.keys(multiActions), (serverName, done) =>
+			req =
+				regionAction: []
+
 			for region, actions of multiActions[serverName]
 				operations = []
 
