@@ -12,6 +12,7 @@ CoffeeScript HBase Implementation with protobuf support based on https://github.
 ### Supported HBase versions
 * [x] 0.98.x
 * [x] 1.0.x
+* [x] 1.2.x
 
 
 ### Features
@@ -48,6 +49,8 @@ client = hbase
 	callTimeout: 5000
 	tcpNoDelay: no
 	tcpKeepAlive: yes
+	realUser: "someRealUser"
+	effectiveUser: "someEffectiveUser"
 
 client.on "error", (err) ->
 	console.log "hbase client error:", err

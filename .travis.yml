@@ -5,6 +5,7 @@ language: node_js
 env:
   - HBASE_VER=0.98
   - HBASE_VER=1.0
+  - HBASE_VER=1.2
 
 node_js:
   - "0.10"
@@ -13,11 +14,13 @@ node_js:
   - "5.0"
 
 before_script:
-  - 'export HBASE_VERSION=`curl http://archive.apache.org/dist/hbase/ | grep -o "hbase-$HBASE_VER.[0-9.]*" | tail -1`'
-  - '[ "$HBASE_VER" == "1.0" ] && export HBASE_FILE=$HBASE_VERSION || export HBASE_FILE=$HBASE_VERSION-hadoop2'
-  - "wget http://archive.apache.org/dist/hbase/$HBASE_VERSION/$HBASE_FILE-bin.tar.gz"
+  - '[ "$HBASE_VER" == "0.98" ] && export HBASE_DIR=`curl http://www.us.apache.org/dist/hbase/ | grep -o "0\.98\.[0-9.]*" | tail -1` && export HBASE_FILE=hbase-$HBASE_DIR-hadoop2 || true'
+  - '[ "$HBASE_VER" == "1.0" ] && export HBASE_DIR=`curl http://www.us.apache.org/dist/hbase/ | grep -o "hbase-1\.0\.[0-9.]*" | tail -1` && export HBASE_FILE=$HBASE_DIR || true'
+  - '[ "$HBASE_VER" == "1.2" ] && export HBASE_DIR=`curl http://www.us.apache.org/dist/hbase/ | grep -o "1\.2\.[0-9.]*" | tail -1` && export HBASE_FILE=hbase-$HBASE_DIR || true'
+  - "wget http://archive.apache.org/dist/hbase/$HBASE_DIR/$HBASE_FILE-bin.tar.gz"
   - "tar -xzf $HBASE_FILE-bin.tar.gz"
   - "$HBASE_FILE/bin/start-hbase.sh"
+  - "sleep 10"
   - "$HBASE_FILE/bin/hbase org.apache.hadoop.hbase.util.RegionSplitter node-hbase-test-table HexStringSplit -c 2 -f cf1"
   - 'echo "alter ''node-hbase-test-table'', {NAME=>''cf1'', VERSIONS => 5}" | JRUBY_OPTS= $HBASE_FILE/bin/hbase shell'
   - 'make'
