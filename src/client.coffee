@@ -415,7 +415,7 @@ module.exports = class Client extends EventEmitter
 								continue
 
 							o = @_parseResponse response.result
-							result.push o if o
+							result.push o or response.result
 
 					done()
 		, (err) ->
