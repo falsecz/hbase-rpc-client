@@ -17,7 +17,7 @@ proto      = builder.build()
 rpcProto   = rpcBuilder.build()
 
 {ClientService, GetRequest} = proto
-{ConnectionHeader, RequestHeader, ResponseHeader} = rpcProto
+{ConnectionHeader, RequestHeader, ResponseHeader, UserInformation} = rpcProto
 
 
 
@@ -31,6 +31,8 @@ module.exports = class Connection extends EventEmitter
 		@socket = null
 		@_tcpNoDelay = options.tcpNoDelay
 		@_tcpKeepAlive = options.tcpKeepAlive
+		@_realUser = options.realUser
+		@_effectiveUser = options.effectiveUser
 		@address =
 			host: options.host
 			port: options.port
@@ -53,8 +55,13 @@ module.exports = class Connection extends EventEmitter
 		@socket.on 'connect', () =>
 			debug "connected to #{@name}"
 			@writeHead()
+
+			userInfo = {}
+			userInfo.realUser = @_realUser if @_realUser
+			userInfo.effectiveUser = @_effectiveUser
 			ch = new ConnectionHeader
 				serviceName: "ClientService"
+				userInfo: new UserInformation userInfo
 			header = ch.encode().toBuffer()
 			@out.writeInt header.length
 			@out.write header

@@ -15,4 +15,5 @@ module.exports =
 	CALL_TIMEOUT: 5000
 	SOCKET_RETRY_WAIT_MS: 200
 	MAX_ACTION_RETRIES: 3
+	EFFECTIVE_USER: "someEffectiveUser"
 

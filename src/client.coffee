@@ -49,6 +49,8 @@ module.exports = class Client extends EventEmitter
 		@maxActionRetries = options.maxActionRetries or hconstants.MAX_ACTION_RETRIES
 		@tcpNoDelay = options.tcpNoDelay or no
 		@tcpKeepAlive = options.tcpKeepAlive or yes
+		@realUser = options.realUser
+		@effectiveUser = options.effectiveUser or hconstants.EFFECTIVE_USER
 		@zkStart = "init"
 		@_zkStartListener = []
 		@rootRegionZKPath = options.rootRegionZKPath or '/meta-region-server'
@@ -686,6 +688,8 @@ module.exports = class Client extends EventEmitter
 			tcpNoDelay: @tcpNoDelay
 			tcpKeepAlive: @tcpKeepAlive
 			logger: @logger
+			realUser: @realUser
+			effectiveUser: @effectiveUser
 		server.state = "connecting"
 
 		# cache server
