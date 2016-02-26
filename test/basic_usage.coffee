@@ -504,11 +504,11 @@ describe 'hbase', () ->
 
 			client.mdelete testTable, rows, (err, res) ->
 				assert.notOk err, "mdelete returned an error: #{err}"
-				assert.equal res.length, 0, "mdelete should return empty row"
+				assert.equal res.length, rows.length, "mdelete should return empty row"
 
 				client.mget testTable, rows, (err, res) ->
 					assert.notOk err, "mget returned an error: #{err}"
-					assert.equal res.length, 0, "not all rows were deleted"
+					assert.equal res.length, rows.length, "not all rows were deleted"
 					done()
 
 		it 'should delete multiple rows via array of Delete objects', (done) ->
@@ -520,11 +520,11 @@ describe 'hbase', () ->
 
 			client.mdelete testTable, dels, (err, res) ->
 				assert.notOk err, "mdelete returned an error: #{err}"
-				assert.equal res.length, 0, "mdelete should return empty row"
+				assert.equal res.length, rows.length, "mdelete should return empty row"
 
 				client.mget testTable, rows, (err, res) ->
 					assert.notOk err, "mget returned an error: #{err}"
-					assert.equal res.length, 0, "not all rows were deleted"
+					assert.equal res.length, rows.length, "not all rows were deleted"
 					done()
 
 	describe 'scanner', () ->
