@@ -610,7 +610,7 @@ module.exports = class Client extends EventEmitter
 				return cb err if err
 
 				for result in results
-					break if retry > @maxActionRetries
+					return cb result if retry > @maxActionRetries and @_isException result
 
 					if @_isRetryException result
 						debug "Retrying #{++retry}-time on #{table}"
@@ -754,6 +754,10 @@ module.exports = class Client extends EventEmitter
 	_deleteCachedLocation: (table, row) =>
 		cachedRegion = @_findRegionName table, row
 		delete @cachedRegionLocations[table][cachedRegion] if cachedRegion
+
+
+	_isException: (err) ->
+		return !!(err.exceptionClassName or err.name)
 
 
 	_isRetryException: (err) ->
