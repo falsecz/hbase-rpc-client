@@ -407,14 +407,10 @@ module.exports = class Client extends EventEmitter
 					return done err if err
 
 					for serverResult in res.regionActionResult
-						if serverResult.exception
-							result.push serverResult.exception
-							continue
+						return done serverResult.exception if serverResult.exception
 
 						for response in serverResult.resultOrException
-							if response.exception
-								result.push response.exception
-								continue
+							return done response.exception if response.exception
 
 							o = @_parseResponse response.result
 							result.push o or response.result
