@@ -325,7 +325,7 @@ module.exports = class Client extends EventEmitter
 				callback = (err) =>
 					if err and retry <= @maxActionRetries and @_isRetryException err
 						debug "Error occured on server: #{location.server.toString()} region: #{location.name}"
-						debug "Retrying #{++retry}-time #{method} on #{table} obj: #{JSON.stringify obj}"
+						debug "Retrying #{++retry}-time #{method} on #{table}"
 						return @_action [method, table, obj, false, retry, cb]...
 
 					cb arguments...
@@ -429,7 +429,7 @@ module.exports = class Client extends EventEmitter
 
 
 	get: (table, get, cb) =>
-		debug "get on table: #{table} get: #{JSON.stringify get}"
+		debug "get on table: #{table}"
 		@_action 'get', table, get, cb
 
 
@@ -441,7 +441,7 @@ module.exports = class Client extends EventEmitter
 			value: value
 			op: put
 
-		debug "checkAndPut on table: #{table} object: #{JSON.stringify o}"
+		debug "checkAndPut on table: #{table}"
 
 		@_action 'checkAndPut', table, o, cb
 
@@ -454,18 +454,18 @@ module.exports = class Client extends EventEmitter
 			value: value
 			op: del
 
-		debug "checkAndDelete on table: #{table} object: #{JSON.stringify o}"
+		debug "checkAndDelete on table: #{table}"
 
 		@_action 'checkAndDelete', table, o, cb
 
 
 	put: (table, put, cb) =>
-		debug "put on table: #{table} put: #{JSON.stringify put}"
+		debug "put on table: #{table}"
 		@_action 'put', table, put, cb
 
 
 	delete: (table, del, cb) =>
-		debug "delete on table: #{table} delete: #{JSON.stringify del}"
+		debug "delete on table: #{table}"
 		@_action 'delete', table, del, cb
 
 
@@ -562,7 +562,7 @@ module.exports = class Client extends EventEmitter
 
 
 	increment: (table, increment, cb) =>
-		debug "increment on table: #{table} increment: #{JSON.stringify increment}"
+		debug "increment on table: #{table}"
 		@_action 'increment', table, increment, cb
 
 

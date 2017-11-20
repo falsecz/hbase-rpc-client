@@ -1,4 +1,3 @@
-debug          = require('debug')('hbase:data_input_stream')
 Readable       = require('readable-stream').Readable
 ByteBuffer     = require 'bytebuffer'
 {EventEmitter} = require 'events'
