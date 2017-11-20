@@ -8,10 +8,11 @@ env:
   - HBASE_VER=1.2
 
 node_js:
-  - "0.10"
-  - "0.12"
-  - "4.2"
-  - "5.0"
+  - "0.10.48"
+  - "0.12.18"
+  - "4.8.6"
+  - "6.12.0"
+  - "8.9.1"
 
 before_script:
   - '[ "$HBASE_VER" == "0.98" ] && export HBASE_DIR=`curl https://archive.apache.org/dist/hbase/ | grep -o "0\.98\.[0-9.]*" | sort --version-sort | tail -1` && export HBASE_FILE=hbase-$HBASE_DIR-hadoop2 || true'
