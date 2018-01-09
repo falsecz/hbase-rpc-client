@@ -79,7 +79,6 @@ module.exports.Scan = class Scan
 			if @scannerId
 				req.scannerId = @scannerId
 			else if @startRow or @stopRow
-				req.scan = {}
 				req.scan.startRow = @startRow if @startRow
 				req.scan.stopRow = @stopRow if @stopRow
 

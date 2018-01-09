@@ -602,7 +602,7 @@ describe 'hbase', () ->
 					done()
 
 		it 'should reverse-scan the table with startRow and stopRow', (done) ->
-			scan = client.getScanner testTable, '4', '99'
+			scan = client.getScanner testTable, '99', '4'
 			scan.setReversed yes
 
 			scan.next (err, row) ->
