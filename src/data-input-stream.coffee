@@ -6,6 +6,8 @@ ByteBuffer     = require 'bytebuffer'
 
 module.exports = class DataInputStream extends EventEmitter
 	constructor: (io) ->
+		super()
+
 		@in = io
 		if typeof io.read isnt 'function'
 			@in = new Readable()

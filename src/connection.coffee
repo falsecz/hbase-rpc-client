@@ -24,6 +24,8 @@ rpcProto   = rpcBuilder.build()
 connectionId = 0
 module.exports = class Connection extends EventEmitter
 	constructor: (options) ->
+		super()
+
 		@id = connectionId++
 		@callId = 1
 		@calls = {}

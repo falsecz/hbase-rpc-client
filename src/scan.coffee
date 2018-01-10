@@ -78,11 +78,9 @@ module.exports.Scan = class Scan
 
 			if @scannerId
 				req.scannerId = @scannerId
-			else if @startRow or @stopRow
-				req.scan = {}
+			else
 				req.scan.startRow = @startRow if @startRow
 				req.scan.stopRow = @stopRow if @stopRow
-
 			req.scan.filter = @filter if @filter
 
 			@row++
@@ -109,7 +107,10 @@ module.exports.Scan = class Scan
 		if (@location.endKey.length is 0 and not @reversed) or (@location.startKey.length is 0 and @reversed)
 			nextRegion = no
 		# or stopRow was contained in the current region
-		if @stopRow and utils.bufferCompare(@location.endKey, new Buffer @stopRow) > 0 and len isnt @numCached
+		if not @reversed and @stopRow and utils.bufferCompare(@location.endKey, new Buffer @stopRow) > 0 and len isnt @numCached
+			nextRegion = no
+		# or stopRow was contained in the current region for reversed scan
+		if @reversed and @stopRow and utils.bufferCompare(@location.startKey, new Buffer @stopRow) < 0 and len isnt @numCached
 			nextRegion = no
 
 		# we need to go to another region
@@ -180,6 +181,7 @@ module.exports.Scan = class Scan
 	close: () =>
 		return if @closed
 		@closeScan @server, @location, @scannerId
+		@cached = []
 		@closed = yes
 
 
