@@ -29,6 +29,10 @@ module.exports.getFilter = getFilter = (filter) ->
 	if filterNameUpper in ['SingleColumnValueFilter']
 		filter[filterName].comparator = getFilter filter[filterName].comparator
 
+	if filter[filterName].compareFilter && filter[filterName].compareFilter.comparator
+		filter[filterName].compareFilter.comparator =
+			getFilter filter[filterName].compareFilter.comparator
+
 	o =
 		name: "org.apache.hadoop.hbase.filter.#{filterNameUpper}"
 	serialized = 'serializedFilter'
