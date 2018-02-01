@@ -470,9 +470,6 @@ module.exports = class Client extends EventEmitter
 
 
 	mget: (table, rows, columns, opts, cb) =>
-		return cb "Input is expected to be a non-empty array" unless Array.isArray(rows) and rows.length > 0
-		debug "mget on table: #{table} #{rows.length} rows"
-
 		if typeof columns is 'function'
 			cb = columns
 			opts = {}
@@ -480,6 +477,9 @@ module.exports = class Client extends EventEmitter
 		else if typeof opts is 'function'
 			cb = opts
 			opts = {}
+
+		return cb "Input is expected to be a non-empty array" unless Array.isArray(rows) and rows.length > 0
+		debug "mget on table: #{table} #{rows.length} rows"
 
 		workingList = []
 		for row in rows
@@ -536,9 +536,6 @@ module.exports = class Client extends EventEmitter
 
 
 	mdelete: (table, rows, opts, cb) =>
-		return cb "Input is expected to be a non-empty array" unless Array.isArray(rows) and rows.length > 0
-		debug "mdelete on table: #{table} #{rows.length} rows"
-
 		if typeof columns is 'function'
 			cb = columns
 			opts = {}
@@ -546,6 +543,9 @@ module.exports = class Client extends EventEmitter
 		else if typeof opts is 'function'
 			cb = opts
 			opts = {}
+
+		return cb "Input is expected to be a non-empty array" unless Array.isArray(rows) and rows.length > 0
+		debug "mdelete on table: #{table} #{rows.length} rows"
 
 		workingList = []
 		for row in rows
