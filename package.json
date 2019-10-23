@@ -30,7 +30,7 @@
     "async": "^1.4.2",
     "bytebuffer": "^2.3.2",
     "debug": "^2.2.0",
-    "protobufjs": "^2.2.1",
+    "protobufjs": "^6.8.8",
     "readable-stream": "^2.0.2",
     "zookeeper-watcher": "^1.0.1"
   },
